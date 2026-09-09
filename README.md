@@ -13,7 +13,7 @@ API นี้ใช้สำหรับส่งไฟล์ PDF มาเซ�
           ▼
    [API: /api/Sign]
           │
-          │  2. ตรวจสอบสิทธิ์ (Token / Core IP)
+          │  2. ตรวจสอบสิทธิ์ (JWT Bearer Token)
           │  3. ฝังไฟล์ XML ลงใน PDF (ถ้าแนบมา)
           │  4. ปลดล็อก USB Token ดึง Private Key มาเซ็น
           │  5. ดึงเวลาสากล (Timestamp) มาประทับ
@@ -35,7 +35,7 @@ API นี้ใช้สำหรับส่งไฟล์ PDF มาเซ�
   ```http
   Authorization: Bearer {{token}}
   ```
-  _(หากเรียกจากเครื่อง IP ภายในที่ได้รับ Whitelist ไม่ต้องใส่ Header Authorization)_
+  _(บังคับใช้ JWT Bearer Token ทุกกรณี เพื่อความถูกต้องของ Audit Log และการระบุตัวตนระบบต้นทาง)_
 
 ### พารามิเตอร์ (Form-Data)
 
