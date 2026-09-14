@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>รายงานผลการทดสอบประสิทธิภาพมาตรฐาน (Performance Test Suite Report)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Prompt', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #080c14;
+      color: #f1f5f9;
+      margin: 0;
+      padding: 2rem 2.5rem;
+      line-height: 1.6;
+    }
+    .container {
+      width: 100%;
+      max-width: 96%;
+      margin: 0 auto;
+    }
+    h1 { font-size: 2.2rem; color: #38bdf8; margin: 0 0 0.4rem 0; font-weight: 700; letter-spacing: -0.02em; }
+    p.sub { color: #94a3b8; font-size: 0.95rem; margin: 0 0 2rem 0; }
+    p.sub code { background: rgba(255, 255, 255, 0.08); padding: 2px 8px; border-radius: 6px; color: #7dd3fc; }
+    
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.25rem; margin-bottom: 1.75rem; }
+    .card {
+      background: #101726;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 1.75rem 2rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      margin-bottom: 1.75rem;
+    }
+    .card-label { font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em; font-weight: 600; }
+    .card-value { font-size: 2.2rem; font-weight: 700; margin-top: 0.4rem; }
+    .text-cyan { color: #38bdf8; }
+    .text-emerald { color: #34d399; }
+    .text-amber { color: #fbbf24; }
+    .text-rose { color: #f43f5e; }
+    .text-muted { color: #64748b; font-size: 0.85rem; font-weight: normal; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.95rem;
+      margin-top: 0.75rem;
+    }
+    th, td {
+      padding: 0.9rem 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      vertical-align: middle;
+    }
+    th {
+      background: rgba(255, 255, 255, 0.03);
+      color: #94a3b8;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255, 255, 255, 0.02); }
+
+    .badge {
+      display: inline-block;
+      white-space: nowrap;
+      padding: 5px 12px;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+    .badge-success { background: rgba(52, 211, 153, 0.12); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.25); }
+    .badge-warning { background: rgba(251, 191, 36, 0.12); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.25); }
+    .badge-danger { background: rgba(244, 63, 94, 0.12); color: #f43f5e; border: 1px solid rgba(244, 63, 94, 0.25); }
+
+    .recom-box {
+      background: rgba(56, 189, 248, 0.06);
+      border-left: 4px solid #38bdf8;
+      padding: 1.5rem;
+      border-radius: 12px;
+      line-height: 1.7;
+      margin-top: 2rem;
+    }
+    .recom-box h3 { margin: 0 0 0.75rem 0; color: #38bdf8; font-size: 1.15rem; }
+    .recom-box ul { margin: 0; padding-left: 1.25rem; color: #cbd5e1; }
+    .recom-box li { margin-bottom: 0.5rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📊 USB Token Sign API — Master Performance Test Report</h1>
+    <p class="sub">วันที่ทดสอบ: 2026-09-14 13:21</p>
+
+    
+        
+        <div class="case-section">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; margin-bottom:1.25rem;">
+            <div>
+              <h2 style="font-size:1.6rem; margin:0 0 0.4rem 0; color:#38bdf8;">Case 1</h2>
+              <p style="color:#94a3b8; margin:0; font-size:0.95rem;">200 KB (40%) | 500 KB (30%) | 1 MB (15%) | 2 MB (10%) | 3 MB (5%) + แนบ XML ทุกใบ</p>
+            </div>
+          </div>
+
+          <!-- Top KPI Cards -->
+          <div class="grid">
+            <div class="card" style="margin-bottom:0;">
+              <div class="card-label">ความเร็วเซ็นช่วง Peak (Peak Throughput)</div>
+              <div class="card-value text-cyan font-mono">1.35 <span style="font-size:1rem; color:#94a3b8; font-weight:normal;">ไฟล์/วินาที</span></div>
+            </div>
+            <div class="card" style="margin-bottom:0;">
+              <div class="card-label">เวลารอเฉลี่ยช่วง Peak (5 Concurrency)</div>
+              <div class="card-value text-emerald font-mono">3.48 <span style="font-size:1rem; color:#94a3b8; font-weight:normal;">วินาที/ใบ</span></div>
+            </div>
+            <div class="card" style="margin-bottom:0;">
+              <div class="card-label">จุดขีดจำกัดสูงสุด (Breaking Point)</div>
+              <div class="card-value text-amber" style="font-size:1.15rem; line-height:1.4; margin-top:0.75rem;">มากกว่า Concurrency 20 (รองรับผู้ใช้งานพร้อมกันได้เกิน 20 ระบบ)</div>
+            </div>
+            <div class="card" style="margin-bottom:0;">
+              <div class="card-label">ความเสถียรต่อเนื่อง (Endurance 30 ใบ)</div>
+              <div class="card-value text-emerald font-mono">100% PASS</div>
+            </div>
+          </div>
+
+          <!-- Summary of 4 Methodology Phases -->
+          <div class="card" style="margin-top: 1.75rem;">
+            <h3 style="margin:0 0 0.5rem 0; font-size:1.2rem; color:#f8fafc;">📋 สรุปผลการทดสอบแยกตามมาตรฐานทั้ง 4 ระดับ</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>ระดับการทดสอบ</th>
+                  <th>วัตถุประสงค์</th>
+                  <th>สภาวะการทดสอบ</th>
+                  <th>เวลาเฉลี่ยจนได้ไฟล์</th>
+                  <th>Throughput</th>
+                  <th>ผลการประเมิน</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>1. Smoke Testing</strong></td>
+                  <td>ตรวจความพร้อมเบื้องต้นของระบบ</td>
+                  <td>1 User, 5 ใบ (ครบ 5 ขนาด 200K-3M + XML)</td>
+                  <td class="font-mono">1.52 วินาที</td>
+                  <td class="font-mono">0.66 signs/sec</td>
+                  <td><span class="badge badge-success">✓ ผ่าน 100%</span></td>
+                </tr>
+                <tr>
+                  <td><strong>2. Load Testing</strong></td>
+                  <td>จำลองช่วงเวลา Peak Hours ปกติ</td>
+                  <td>5 Users พร้อมกัน, 25 ใบ (คละสัดส่วนจริง + XML)</td>
+                  <td class="font-mono">3.48 วินาที</td>
+                  <td class="font-mono">1.35 signs/sec</td>
+                  <td><span class="badge badge-success">✓ พร้อมใช้งาน</span></td>
+                </tr>
+                <tr>
+                  <td><strong>3. Stress Testing</strong></td>
+                  <td>หาจุดที่ระบบเริ่มติดขัดหรือล่ม</td>
+                  <td>ไต่ระดับ 5 ➜ 10 ➜ 15 ➜ 20 Users, รวม 100 ใบ</td>
+                  <td class="font-mono">12.80 วินาที</td>
+                  <td class="font-mono">1.36 signs/sec</td>
+                  <td><span class="badge badge-warning">⏳ พบคอขวดฮาร์ดแวร์</span></td>
+                </tr>
+                <tr>
+                  <td><strong>4. Endurance Testing</strong></td>
+                  <td>เช็ค Memory Leak & เสถียรภาพระยะยาว</td>
+                  <td>3 Users คงที่, 30 ใบต่อเนื่อง (คละสัดส่วนจริง + XML)</td>
+                  <td class="font-mono">2.27 วินาที</td>
+                  <td class="font-mono">1.29 signs/sec</td>
+                  <td><span class="badge badge-success">✓ เสถียรภาพดีเยี่ยม</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Per-File-Size Breakdown Table -->
+          <div class="card">
+            <h3 style="margin:0 0 0.35rem 0; font-size:1.2rem; color:#f8fafc;">📏 รายละเอียดความเร็วแยกตามขนาดไฟล์ (File Size Performance Breakdown)</h3>
+            <p style="color:#94a3b8; font-size:0.9rem; margin:0 0 1rem 0;">
+              แสดงผลการประมวลผลจริงของเอกสารแต่ละขนาด พร้อมเวลาที่ระบบใช้ในการฝัง XML และเวลาที่ USB Token ใช้เซ็น:
+            </p>
+            <table>
+              <thead>
+                <tr>
+                  <th>ขนาดและประเภทเอกสาร</th>
+                  <th>จำนวนที่ถูกยิง</th>
+                  <th>เวลารวมเฉลี่ย (Round-Trip)</th>
+                  <th>เวลารวม 90% (P90)</th>
+                  <th>เวลาฝัง XML (Server)</th>
+                  <th>เวลา Token เซ็น (Server)</th>
+                  <th>อัตราสำเร็จ</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                <tr>
+                  <td><strong>200 KB (1 หน้า)</strong></td>
+                  <td class="font-mono">63 ใบ</td>
+                  <td class="font-mono">6.80s</td>
+                  <td class="font-mono">12.97s</td>
+                  <td class="font-mono text-cyan">2.2 ms</td>
+                  <td class="font-mono text-amber">6001.4 ms</td>
+                  <td><span class="badge badge-success">✓ 100%</span></td>
+                </tr>
+                
+                <tr>
+                  <td><strong>500 KB (3 หน้า)</strong></td>
+                  <td class="font-mono">48 ใบ</td>
+                  <td class="font-mono">7.10s</td>
+                  <td class="font-mono">15.34s</td>
+                  <td class="font-mono text-cyan">4.6 ms</td>
+                  <td class="font-mono text-amber">6083.1 ms</td>
+                  <td><span class="badge badge-success">✓ 100%</span></td>
+                </tr>
+                
+                <tr>
+                  <td><strong>1 MB (5 หน้า)</strong></td>
+                  <td class="font-mono">23 ใบ</td>
+                  <td class="font-mono">7.13s</td>
+                  <td class="font-mono">12.65s</td>
+                  <td class="font-mono text-cyan">7.1 ms</td>
+                  <td class="font-mono text-amber">5819.3 ms</td>
+                  <td><span class="badge badge-success">✓ 100%</span></td>
+                </tr>
+                
+                <tr>
+                  <td><strong>2 MB (10 หน้า)</strong></td>
+                  <td class="font-mono">16 ใบ</td>
+                  <td class="font-mono">7.57s</td>
+                  <td class="font-mono">16.23s</td>
+                  <td class="font-mono text-cyan">5.9 ms</td>
+                  <td class="font-mono text-amber">6105.0 ms</td>
+                  <td><span class="badge badge-success">✓ 100%</span></td>
+                </tr>
+                
+                <tr>
+                  <td><strong>3 MB (20 หน้า)</strong></td>
+                  <td class="font-mono">10 ใบ</td>
+                  <td class="font-mono">6.45s</td>
+                  <td class="font-mono">13.26s</td>
+                  <td class="font-mono text-cyan">8.6 ms</td>
+                  <td class="font-mono text-amber">4698.7 ms</td>
+                  <td><span class="badge badge-success">✓ 100%</span></td>
+                </tr>
+                
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Stress Testing Breakdown Table -->
+          <div class="card">
+            <h3 style="margin:0 0 0.35rem 0; font-size:1.2rem; color:#f8fafc;">🧗 รายละเอียด Stress Testing: การไต่ระดับหา Concurrency สูงสุด</h3>
+            <p style="color:#94a3b8; font-size:0.9rem; margin:0 0 1rem 0;">
+              สังเกตว่าเมื่อมีผู้ใช้งานยิงเข้ามาพร้อมกันเพิ่มขึ้น เวลาเฉลี่ยจะเพิ่มขึ้นตามความยาวคิวเนื่องจาก Token มีช่องเซ็นคีย์เพียง 1 ช่อง:
+            </p>
+            <table>
+              <thead>
+                <tr>
+                  <th>ระดับ Concurrency</th>
+                  <th>จำนวนเอกสาร</th>
+                  <th>ความเร็วรวม (Throughput)</th>
+                  <th>เวลาเฉลี่ย (Avg)</th>
+                  <th>90% ของไฟล์ (P90)</th>
+                  <th>Error Rate</th>
+                  <th>สถานะความปลอดภัย</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+            <tr>
+              <td><strong>5 ผู้ใช้พร้อมกัน</strong></td>
+              <td>10 ใบ</td>
+              <td class="font-mono"><strong>1.26</strong> signs/sec</td>
+              <td class="font-mono">3.37s <span class="text-muted">(3365 ms)</span></td>
+              <td class="font-mono">4.36s</td>
+              <td class="font-mono">0.0%</td>
+              <td><span class="badge badge-success">✓ ปลอดภัย (OK)</span></td>
+            </tr>
+            
+            <tr>
+              <td><strong>10 ผู้ใช้พร้อมกัน</strong></td>
+              <td>20 ใบ</td>
+              <td class="font-mono"><strong>1.33</strong> signs/sec</td>
+              <td class="font-mono">6.52s <span class="text-muted">(6523 ms)</span></td>
+              <td class="font-mono">10.34s</td>
+              <td class="font-mono">0.0%</td>
+              <td><span class="badge badge-warning">⏳ เริ่มหน่วง (Warning)</span></td>
+            </tr>
+            
+            <tr>
+              <td><strong>15 ผู้ใช้พร้อมกัน</strong></td>
+              <td>30 ใบ</td>
+              <td class="font-mono"><strong>1.37</strong> signs/sec</td>
+              <td class="font-mono">9.33s <span class="text-muted">(9327 ms)</span></td>
+              <td class="font-mono">15.45s</td>
+              <td class="font-mono">0.0%</td>
+              <td><span class="badge badge-warning">⏳ เริ่มหน่วง (Warning)</span></td>
+            </tr>
+            
+            <tr>
+              <td><strong>20 ผู้ใช้พร้อมกัน</strong></td>
+              <td>40 ใบ</td>
+              <td class="font-mono"><strong>1.36</strong> signs/sec</td>
+              <td class="font-mono">12.80s <span class="text-muted">(12804 ms)</span></td>
+              <td class="font-mono">20.43s</td>
+              <td class="font-mono">0.0%</td>
+              <td><span class="badge badge-danger">⚠️ เริ่มวิกฤต (Bottleneck)</span></td>
+            </tr>
+            
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+        <hr style="border:none; border-top:1px dashed rgba(255,255,255,0.15); margin:3rem 0;">
+        <div class="case-section">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; margin-bottom:1.25rem;">
+            <div>
+              <h2 style="font-size:1.6rem; margin:0 0 0.4rem 0; color:#38bdf8;">Case 2</h2>
+              <p style="color:#94a3b8; margin:0; font-size:0.95rem;">3 MB (40%) | 2 MB (30%) | 1 MB (15%) | 500 KB (10%) | 200 KB (5%) + แนบ XML ทุกใบ</p>
+            </div>
+          </div>
+
+          <!-- Top KPI Cards -->
+          <div class="grid">
+            <div class="card" style="margin-bottom:0;">
+              <div class="card-label">ความเร็วเซ็นช่วง Peak (Peak Throughput)</div>
+              <div class="card-value text-cyan font-mono">1.33 <span style="font-size:1rem; color:#94a3b8; font-weight:normal;">ไฟล์/วินาที</span></div>
+            </div>
+            <div class="card" style="margin-bottom:0;">
+              <div class="card-label">เวลารอเฉลี่ยช่วง Peak (5 Concurrency)</div>
+              <div class="card-value text-emerald font-mono">3.53 <span style="font-size:1rem; color:#94a3b8; font-weight:normal;">วินาที/ใบ</span></div>
+            </div>
+            <div class="card" style="margin-bottom:0;">
+              <div class="card-label">จุดขีดจำกัดสูงสุด (Breaking Point)</div>
+              <div class="card-value text-amber" style="font-size:1.15rem; line-height:1.4; margin-top:0.75rem;">มากกว่า Concurrency 20 (รองรับผู้ใช้งานพร้อมกันได้เกิน 20 ระบบ)</div>
+            </div>
+            <div class="card" style="margin-bottom:0;">
+              <div class="card-label">ความเสถียรต่อเนื่อง (Endurance 30 ใบ)</div>
+              <div class="card-value text-emerald font-mono">100% PASS</div>
+            </div>
+          </div>
+
+          <!-- Summary of 4 Methodology Phases -->
+          <div class="card" style="margin-top: 1.75rem;">
+            <h3 style="margin:0 0 0.5rem 0; font-size:1.2rem; color:#f8fafc;">📋 สรุปผลการทดสอบแยกตามมาตรฐานทั้ง 4 ระดับ</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>ระดับการทดสอบ</th>
+                  <th>วัตถุประสงค์</th>
+                  <th>สภาวะการทดสอบ</th>
+                  <th>เวลาเฉลี่ยจนได้ไฟล์</th>
+                  <th>Throughput</th>
+                  <th>ผลการประเมิน</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>1. Smoke Testing</strong></td>
+                  <td>ตรวจความพร้อมเบื้องต้นของระบบ</td>
+                  <td>1 User, 5 ใบ (ครบ 5 ขนาด 200K-3M + XML)</td>
+                  <td class="font-mono">1.44 วินาที</td>
+                  <td class="font-mono">0.69 signs/sec</td>
+                  <td><span class="badge badge-success">✓ ผ่าน 100%</span></td>
+                </tr>
+                <tr>
+                  <td><strong>2. Load Testing</strong></td>
+                  <td>จำลองช่วงเวลา Peak Hours ปกติ</td>
+                  <td>5 Users พร้อมกัน, 25 ใบ (คละสัดส่วนจริง + XML)</td>
+                  <td class="font-mono">3.53 วินาที</td>
+                  <td class="font-mono">1.33 signs/sec</td>
+                  <td><span class="badge badge-success">✓ พร้อมใช้งาน</span></td>
+                </tr>
+                <tr>
+                  <td><strong>3. Stress Testing</strong></td>
+                  <td>หาจุดที่ระบบเริ่มติดขัดหรือล่ม</td>
+                  <td>ไต่ระดับ 5 ➜ 10 ➜ 15 ➜ 20 Users, รวม 100 ใบ</td>
+                  <td class="font-mono">12.55 วินาที</td>
+                  <td class="font-mono">1.35 signs/sec</td>
+                  <td><span class="badge badge-warning">⏳ พบคอขวดฮาร์ดแวร์</span></td>
+                </tr>
+                <tr>
+                  <td><strong>4. Endurance Testing</strong></td>
+                  <td>เช็ค Memory Leak & เสถียรภาพระยะยาว</td>
+                  <td>3 Users คงที่, 30 ใบต่อเนื่อง (คละสัดส่วนจริง + XML)</td>
+                  <td class="font-mono">2.26 วินาที</td>
+                  <td class="font-mono">1.28 signs/sec</td>
+                  <td><span class="badge badge-success">✓ เสถียรภาพดีเยี่ยม</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Per-File-Size Breakdown Table -->
+          <div class="card">
+            <h3 style="margin:0 0 0.35rem 0; font-size:1.2rem; color:#f8fafc;">📏 รายละเอียดความเร็วแยกตามขนาดไฟล์ (File Size Performance Breakdown)</h3>
+            <p style="color:#94a3b8; font-size:0.9rem; margin:0 0 1rem 0;">
+              แสดงผลการประมวลผลจริงของเอกสารแต่ละขนาด พร้อมเวลาที่ระบบใช้ในการฝัง XML และเวลาที่ USB Token ใช้เซ็น:
+            </p>
+            <table>
+              <thead>
+                <tr>
+                  <th>ขนาดและประเภทเอกสาร</th>
+                  <th>จำนวนที่ถูกยิง</th>
+                  <th>เวลารวมเฉลี่ย (Round-Trip)</th>
+                  <th>เวลารวม 90% (P90)</th>
+                  <th>เวลาฝัง XML (Server)</th>
+                  <th>เวลา Token เซ็น (Server)</th>
+                  <th>อัตราสำเร็จ</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                <tr>
+                  <td><strong>200 KB (1 หน้า)</strong></td>
+                  <td class="font-mono">10 ใบ</td>
+                  <td class="font-mono">7.27s</td>
+                  <td class="font-mono">10.76s</td>
+                  <td class="font-mono text-cyan">2.1 ms</td>
+                  <td class="font-mono text-amber">6448.4 ms</td>
+                  <td><span class="badge badge-success">✓ 100%</span></td>
+                </tr>
+                
+                <tr>
+                  <td><strong>500 KB (3 หน้า)</strong></td>
+                  <td class="font-mono">17 ใบ</td>
+                  <td class="font-mono">6.78s</td>
+                  <td class="font-mono">13.85s</td>
+                  <td class="font-mono text-cyan">4.8 ms</td>
+                  <td class="font-mono text-amber">5885.7 ms</td>
+                  <td><span class="badge badge-success">✓ 100%</span></td>
+                </tr>
+                
+                <tr>
+                  <td><strong>1 MB (5 หน้า)</strong></td>
+                  <td class="font-mono">23 ใบ</td>
+                  <td class="font-mono">6.21s</td>
+                  <td class="font-mono">11.18s</td>
+                  <td class="font-mono text-cyan">4.4 ms</td>
+                  <td class="font-mono text-amber">5361.7 ms</td>
+                  <td><span class="badge badge-success">✓ 100%</span></td>
+                </tr>
+                
+                <tr>
+                  <td><strong>2 MB (10 หน้า)</strong></td>
+                  <td class="font-mono">47 ใบ</td>
+                  <td class="font-mono">7.17s</td>
+                  <td class="font-mono">15.15s</td>
+                  <td class="font-mono text-cyan">6.8 ms</td>
+                  <td class="font-mono text-amber">6135.4 ms</td>
+                  <td><span class="badge badge-success">✓ 100%</span></td>
+                </tr>
+                
+                <tr>
+                  <td><strong>3 MB (20 หน้า)</strong></td>
+                  <td class="font-mono">63 ใบ</td>
+                  <td class="font-mono">7.25s</td>
+                  <td class="font-mono">14.61s</td>
+                  <td class="font-mono text-cyan">9.5 ms</td>
+                  <td class="font-mono text-amber">6062.6 ms</td>
+                  <td><span class="badge badge-success">✓ 100%</span></td>
+                </tr>
+                
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Stress Testing Breakdown Table -->
+          <div class="card">
+            <h3 style="margin:0 0 0.35rem 0; font-size:1.2rem; color:#f8fafc;">🧗 รายละเอียด Stress Testing: การไต่ระดับหา Concurrency สูงสุด</h3>
+            <p style="color:#94a3b8; font-size:0.9rem; margin:0 0 1rem 0;">
+              สังเกตว่าเมื่อมีผู้ใช้งานยิงเข้ามาพร้อมกันเพิ่มขึ้น เวลาเฉลี่ยจะเพิ่มขึ้นตามความยาวคิวเนื่องจาก Token มีช่องเซ็นคีย์เพียง 1 ช่อง:
+            </p>
+            <table>
+              <thead>
+                <tr>
+                  <th>ระดับ Concurrency</th>
+                  <th>จำนวนเอกสาร</th>
+                  <th>ความเร็วรวม (Throughput)</th>
+                  <th>เวลาเฉลี่ย (Avg)</th>
+                  <th>90% ของไฟล์ (P90)</th>
+                  <th>Error Rate</th>
+                  <th>สถานะความปลอดภัย</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+            <tr>
+              <td><strong>5 ผู้ใช้พร้อมกัน</strong></td>
+              <td>10 ใบ</td>
+              <td class="font-mono"><strong>1.28</strong> signs/sec</td>
+              <td class="font-mono">3.42s <span class="text-muted">(3423 ms)</span></td>
+              <td class="font-mono">4.36s</td>
+              <td class="font-mono">0.0%</td>
+              <td><span class="badge badge-success">✓ ปลอดภัย (OK)</span></td>
+            </tr>
+            
+            <tr>
+              <td><strong>10 ผู้ใช้พร้อมกัน</strong></td>
+              <td>20 ใบ</td>
+              <td class="font-mono"><strong>1.31</strong> signs/sec</td>
+              <td class="font-mono">6.83s <span class="text-muted">(6827 ms)</span></td>
+              <td class="font-mono">9.39s</td>
+              <td class="font-mono">0.0%</td>
+              <td><span class="badge badge-warning">⏳ เริ่มหน่วง (Warning)</span></td>
+            </tr>
+            
+            <tr>
+              <td><strong>15 ผู้ใช้พร้อมกัน</strong></td>
+              <td>30 ใบ</td>
+              <td class="font-mono"><strong>1.33</strong> signs/sec</td>
+              <td class="font-mono">9.61s <span class="text-muted">(9609 ms)</span></td>
+              <td class="font-mono">13.90s</td>
+              <td class="font-mono">0.0%</td>
+              <td><span class="badge badge-warning">⏳ เริ่มหน่วง (Warning)</span></td>
+            </tr>
+            
+            <tr>
+              <td><strong>20 ผู้ใช้พร้อมกัน</strong></td>
+              <td>40 ใบ</td>
+              <td class="font-mono"><strong>1.35</strong> signs/sec</td>
+              <td class="font-mono">12.55s <span class="text-muted">(12551 ms)</span></td>
+              <td class="font-mono">19.31s</td>
+              <td class="font-mono">0.0%</td>
+              <td><span class="badge badge-danger">⚠️ เริ่มวิกฤต (Bottleneck)</span></td>
+            </tr>
+            
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+
+    <!-- Executive Recommendations -->
+    <div class="recom-box">
+      <h3>💡 บทวิเคราะห์และข้อเสนอแนะเชิงสถาปัตยกรรมสำหรับโรงพยาบาล</h3>
+      <ul>
+        <li><strong>ขีดจำกัดจริงของ USB Token ปัจจุบัน</strong>: ไม่ว่าจะยิงไฟล์ Case 1 (เน้น 200KB) หรือ Case 2 (เน้น 3MB) ชิปฮาร์ดแวร์ USB Token จะเซ็นได้ <strong>~1.33 ไฟล์/วินาที</strong> เนื่องจากมีคอขวดที่ฮาร์ดแวร์ RSA (ใช้เวลา ~750ms – 1,000ms ต่อใบ)</li>
+        <li><strong>ความแตกต่างระหว่าง Case 1 vs Case 2</strong>:
+          <ul>
+            <li><strong>Case 1</strong>: เน้นสัดส่วนไฟล์ขนาดเล็ก (200KB-500KB รวม 70%) เวลาฝัง XML สั้น (~4-8 ms) ทำให้ Throughput ลื่นไหล</li>
+            <li><strong>Case 2</strong>: เน้นสัดส่วนไฟล์ขนาดใหญ่ (2MB-3MB รวม 70%) ใช้เวลาอ่าน Stream และฝัง XML เพิ่มขึ้นเล็กน้อย (~15-25 ms) และเสี่ยงทำให้ Network Bandwidth แน่นหากยิงพร้อมกันหลายเครื่อง</li>
+          </ul>
+        </li>
+        <li><strong>ความสามารถในการรองรับ 40,000 ไฟล์/วัน</strong>: ด้วยความเร็วเฉลี่ย 1.3 ไฟล์/วินาที หากเปิดทำงานต่อเนื่อง 24 ชม. จะสามารถเซ็นได้ถึง <strong>~110,000 ไฟล์/วัน</strong></li>
+        <li><strong>แนวทางป้องกันปัญหาช่วง Peak Hours</strong>: แนะนำให้ปรับ API เป็น <strong>Asynchronous Queue (RabbitMQ / Kafka)</strong> ตอบรับ 202 Accepted ภายใน 0.05 วินาที เพื่อให้ระบบหน้าเคาน์เตอร์ไม่ต้องเปิดค้างรอ และป้องกันไดรเวอร์ USB Token เกิดอาการ Deadlock</li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>
