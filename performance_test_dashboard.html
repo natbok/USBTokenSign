@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>USB Token Sign API - Performance Benchmark Report</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 650px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 320px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .tab-btn.active {
+            background-color: #3b82f6;
+            color: #ffffff;
+            border-color: #3b82f6;
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 6px;
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen pb-12">
+    <!-- Chosen Palette: Slate & Blue Executive Modern Palette -->
+    <!-- Application Structure Plan: Designed a 6-section interactive dashboard layout with sticky navigation tabs, summary KPI cards, comparative views for Case 1 vs Case 2, server-timing breakdown charts, stress breaking point analysis, and an interactive queue wait time estimator tool. This allows stakeholders to quickly assess executive high-level metrics as well as drill down into granular technical server timings and recommendations. -->
+    <!-- Visualization & Content Choices: 
+       - Executive KPIs -> Metric Cards -> Interactive Tabs -> Quick overview of capacity and breaking points.
+       - Server-Timing Breakdown -> Goal: Show bottleneck step -> Horizontal Bar Chart (Chart.js Canvas) -> Dynamic user selection -> Clearly isolates USB Token HW signing as the 80%+ time consumer.
+       - Concurrency Scaling -> Goal: Show latency growth vs throughput wall -> Line Chart (Chart.js Canvas) -> Shows flat throughput at ~1.39 signs/s while wait times jump up to 58s.
+       - Stress Breaking Point -> Goal: Identify failure threshold -> Dynamic Step Table + Annotated Line Chart -> Visualizes safe limit at 44 users and failure at 46 users.
+       - Queue Wait Estimator -> Goal: Interactive decision support -> Vanilla JS Calculator -> Helps devs configure client timeouts accurately.
+       Confirming NO SVG graphics used and NO Mermaid JS used. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <!-- Top Header Banner -->
+    <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-50 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <span class="bg-blue-600 text-white text-xs font-semibold px-2.5 py-0.5 rounded">PERFORMANCE REPORT</span>
+                        <span class="text-xs text-slate-400">วันที่ทดสอบ: 14 กันยายน 2026</span>
+                    </div>
+                    <h1 class="text-2xl font-bold tracking-tight text-white mt-1">USB Token Sign API — Performance Benchmark Dashboard</h1>
+                    <p class="text-xs text-slate-300 mt-0.5">รายงานวิเคราะห์ประสิทธิภาพ ขีดจำกัดคิวฮาร์ดแวร์ จุดแตกหัก และระยะเวลาประมวลผลระบบ</p>
+                </div>
+                <div class="flex flex-wrap gap-2 text-xs">
+                    <div class="bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-200">
+                        <span class="text-slate-400 block text-[10px]">ระบบเป้าหมาย</span>
+                        <span class="font-semibold text-blue-400">USB Token Sign API</span>
+                    </div>
+                    <div class="bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-200">
+                        <span class="text-slate-400 block text-[10px]">ขีดจำกัดปลอดภัย</span>
+                        <span class="font-semibold text-emerald-400">44 Concurrency</span>
+                    </div>
+                    <div class="bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-200">
+                        <span class="text-slate-400 block text-[10px]">Throughput สูงสุด</span>
+                        <span class="font-semibold text-amber-400">1.39 Signs/Sec</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Bar -->
+            <nav class="flex space-x-2 mt-4 overflow-x-auto custom-scrollbar pb-1 text-xs sm:text-sm">
+                <button onclick="switchTab('exec')" id="tab-exec" class="tab-btn active px-4 py-2 rounded-lg font-medium transition border border-transparent whitespace-nowrap">
+                    📊 บทสรุปผู้บริหาร
+                </button>
+                <button onclick="switchTab('baseline')" id="tab-baseline" class="tab-btn bg-slate-800 text-slate-300 hover:bg-slate-700 px-4 py-2 rounded-lg font-medium transition border border-slate-700 whitespace-nowrap">
+                    ⚡ Baseline & Server Timing
+                </button>
+                <button onclick="switchTab('workload')" id="tab-workload" class="tab-btn bg-slate-800 text-slate-300 hover:bg-slate-700 px-4 py-2 rounded-lg font-medium transition border border-slate-700 whitespace-nowrap">
+                    🔀 Mixed Workloads (Case 1 vs 2)
+                </button>
+                <button onclick="switchTab('stress')" id="tab-stress" class="tab-btn bg-slate-800 text-slate-300 hover:bg-slate-700 px-4 py-2 rounded-lg font-medium transition border border-slate-700 whitespace-nowrap">
+                    💥 Stress & Breaking Point
+                </button>
+                <button onclick="switchTab('recommendations')" id="tab-recommendations" class="tab-btn bg-slate-800 text-slate-300 hover:bg-slate-700 px-4 py-2 rounded-lg font-medium transition border border-slate-700 whitespace-nowrap">
+                    💡 การวิเคราะห์คอขวด & คำแนะนำ
+                </button>
+                <button onclick="switchTab('calculator')" id="tab-calculator" class="tab-btn bg-slate-800 text-slate-300 hover:bg-slate-700 px-4 py-2 rounded-lg font-medium transition border border-slate-700 whitespace-nowrap">
+                    🧮 เครื่องคำนวณเวลารอคิว
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+
+        <!-- Top Overview Stats (Always Visible Key Metrics) -->
+        <section class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold text-slate-500">ขีดจำกัดสูงสุดที่ปลอดภัย</span>
+                    <span class="text-xs bg-emerald-100 text-emerald-800 font-medium px-2 py-0.5 rounded">Safe Limit</span>
+                </div>
+                <div class="mt-2">
+                    <span class="text-3xl font-bold text-slate-900">44</span>
+                    <span class="text-xs text-slate-500 font-medium"> Users</span>
+                </div>
+                <p class="text-[11px] text-slate-500 mt-1">Throughput 1.39 ใบ/วินาที (Success Rate 100%)</p>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold text-slate-500">จุดแตกหัก (Breaking Point)</span>
+                    <span class="text-xs bg-rose-100 text-rose-800 font-medium px-2 py-0.5 rounded">Error Level</span>
+                </div>
+                <div class="mt-2">
+                    <span class="text-3xl font-bold text-rose-600">46</span>
+                    <span class="text-xs text-slate-500 font-medium"> Users</span>
+                </div>
+                <p class="text-[11px] text-slate-500 mt-1">เริ่มเกิด Client Timeout Error (2 ใบ/92 ใบ)</p>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold text-slate-500">Throughput เพดานสูงสุด</span>
+                    <span class="text-xs bg-blue-100 text-blue-800 font-medium px-2 py-0.5 rounded">Hardware Ceiling</span>
+                </div>
+                <div class="mt-2">
+                    <span class="text-3xl font-bold text-blue-600">1.39</span>
+                    <span class="text-xs text-slate-500 font-medium"> Signs/Sec</span>
+                </div>
+                <p class="text-[11px] text-slate-500 mt-1">จำกัดโดยคิวการเซ็น RSA ของ USB Token</p>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold text-slate-500">ความเสถียรในสภาวะปกติ</span>
+                    <span class="text-xs bg-indigo-100 text-indigo-800 font-medium px-2 py-0.5 rounded">Endurance</span>
+                </div>
+                <div class="mt-2">
+                    <span class="text-3xl font-bold text-indigo-600">100%</span>
+                    <span class="text-xs text-slate-500 font-medium"> Pass</span>
+                </div>
+                <p class="text-[11px] text-slate-500 mt-1">ไม่พบปัญหา Memory Leak ในการทดสอบต่อเนื่อง</p>
+            </div>
+        </section>
+
+        <!-- SECTION 1: EXECUTIVE SUMMARY -->
+        <section id="sec-exec" class="tab-content space-y-6">
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <h2 class="text-xl font-bold text-slate-900 mb-2">บทสรุปผู้บริหาร (Executive Summary)</h2>
+                <p class="text-sm text-slate-600 leading-relaxed mb-6">
+                    ส่วนนี้สรุปผลการประเมินประสิทธิภาพของระบบ <strong>USB Token Sign API</strong> จากการทดสอบแบบรอบด้านครอบคลุมการวัด Baseline, โหลดสภาวะปกติ (Load), การทดสอบสภาวะเค้นสูง (Stress), การทดสอบความเสถียรระยะยาว (Endurance), และการหาจุดแตกหักของระบบ (Breaking Point) เพื่อวางแผนรองรับปริมาณธุรกรรมอิเล็กทรอนิกส์ขององค์กรได้อย่างปลอดภัย
+                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                            <h3 class="font-semibold text-slate-800 text-sm flex items-center gap-2">
+                                <span class="text-emerald-500 text-base">🛡️</span> 1. ขีดจำกัดสูงสุดของระบบ (Maximum Safe Capacity)
+                            </h3>
+                            <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+                                ระบบสามารถรองรับผู้ใช้งานพร้อมกัน (Concurrency) ได้สูงสุดที่ <strong>44 ผู้ใช้งาน</strong> โดยยังคงรักษาอัตราความสำเร็จที่ <strong>100%</strong> และให้ Throughput เฉลี่ยสูงสุดที่ <strong>1.39 ไฟล์/วินาที</strong> แต่เวลารอของผู้ใช้แต่ละคนจะเพิ่มขึ้นสูงถึง ~26.89 วินาที (ช้าสุด 57.94 วินาที)
+                            </p>
+                        </div>
+
+                        <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                            <h3 class="font-semibold text-slate-800 text-sm flex items-center gap-2">
+                                <span class="text-rose-500 text-base">💥</span> 2. จุดแตกหักของระบบ (Breaking Point)
+                            </h3>
+                            <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+                                เมื่อเพิ่มผู้ใช้งานพร้อมกันเป็น <strong>46 ผู้ใช้งาน</strong> ระบบจะเริ่มเกิดข้อผิดพลาด <strong>Timeout Error</strong> ฝั่ง Client เนื่องจากคิวการรอฮาร์ดแวร์ยาวเกินกว่าระยะเวลารอของการเชื่อมต่อ โดยพบไฟล์ล้มเหลว 2 ใบจาก 92 ใบ (อัตราสำเร็จลดลงเหลือ 97.8%)
+                            </p>
+                        </div>
+
+                        <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                            <h3 class="font-semibold text-slate-800 text-sm flex items-center gap-2">
+                                <span class="text-blue-500 text-base">🔐</span> 3. คอขวดหลักของระบบ (Hardware Queue Bottleneck)
+                            </h3>
+                            <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+                                กระบวนการที่ใช้เวลามากที่สุดคิดเป็นกว่า 80% ของเวลาทั้งหมดคือ <strong>USB Token Hardware RSA Signing</strong> เนื่องจากตัวฮาร์ดแวร์ USB Token ประมวลผลเซ็นดิจิทัลได้ทีละ 1 คำขอ (Single Hardware Queue) ส่งผลให้ Throughput รวมติดเพดานอยู่ที่ ~1.3-1.4 signs/sec ไม่ว่าจะเพิ่ม CPU/RAM มากเพียงใด
+                            </p>
+                        </div>
+
+                        <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                            <h3 class="font-semibold text-slate-800 text-sm flex items-center gap-2">
+                                <span class="text-indigo-500 text-base">📄</span> 4. ผลกระทบจากขนาดไฟล์ (File Size Impact)
+                            </h3>
+                            <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+                                ขนาดไฟล์ PDF ตั้งแต่ 200 KB ถึง 3 MB (1 หน้า ถึง 20 หน้า) <strong>ไม่มีผลกระทบอย่างมีนัยสำคัญ</strong> ต่อประสิทธิภาพโดยรวม เนื่องจากขั้นตอนการฝัง XML และสร้าง PDF/A-3B บน Server ใช้เวลาเพียง 1.8 - 22.6 ms เท่านั้น
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col justify-between bg-slate-900 text-white p-5 rounded-xl border border-slate-800">
+                        <div>
+                            <span class="text-xs text-blue-400 font-semibold tracking-wider uppercase">Architecture Matrix Summary</span>
+                            <h3 class="text-lg font-bold mt-1 mb-3">สรุปผลประเมินตามประเภทการทดสอบ</h3>
+                            <div class="space-y-3 text-xs">
+                                <div class="flex justify-between items-center py-2 border-b border-slate-800">
+                                    <span class="text-slate-300">Smoke Testing (1 User)</span>
+                                    <span class="text-emerald-400 font-medium">✓ Passed (0.57 - 0.71 signs/s)</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2 border-b border-slate-800">
+                                    <span class="text-slate-300">Load Testing (5 Users Peak)</span>
+                                    <span class="text-emerald-400 font-medium">✓ Ready (1.33 - 1.34 signs/s)</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2 border-b border-slate-800">
+                                    <span class="text-slate-300">Stress Testing (5-20 Users)</span>
+                                    <span class="text-amber-400 font-medium">⏳ HW Queue Delay (Wait ~12.9s)</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2 border-b border-slate-800">
+                                    <span class="text-slate-300">Endurance Testing (3 Users / 30 ใบ)</span>
+                                    <span class="text-emerald-400 font-medium">✓ Excellent (100% Pass, No Leak)</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2">
+                                    <span class="text-slate-300">Stress Breaking Point (44+ Users)</span>
+                                    <span class="text-rose-400 font-medium">💥 Point identified at 46 Users</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 p-3 bg-slate-800/80 rounded-lg border border-slate-700">
+                            <span class="text-xs text-amber-300 font-semibold block">💡 คำแนะนำสำคัญเร่งด่วน</span>
+                            <p class="text-[11px] text-slate-300 mt-1">
+                                ต้องกำหนด Client Timeout ไม่ต่ำกว่า <strong>60 วินาที</strong> เพื่อป้องกันระบบตัดการเชื่อมต่อขณะรอคิว USB Token และวางแผนขยายฮาร์ดแวร์ด้วย Multiple Tokens หรือ HSM หากต้องการ Throughput เกิน 1.4 ไฟล์/วินาที
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: BASELINE & SERVER TIMING -->
+        <section id="sec-baseline" class="tab-content hidden space-y-6">
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">การทดสอบพื้นฐานและเปรียบเทียบขั้นตอน (Baseline & Server Timing)</h2>
+                        <p class="text-sm text-slate-600">วิเคราะห์ระยะเวลาการประมวลผลจริงฝั่ง Client (Round-Trip) และเจาะลึก 4 ขั้นตอนการทำงานภายใน API Server</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <label for="baseline-selector" class="text-xs font-semibold text-slate-600">เลือกสภาวะทดสอบ:</label>
+                        <select id="baseline-selector" onchange="updateBaselineView()" class="bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-lg px-3 py-2 font-medium focus:ring-blue-500 focus:border-blue-500">
+                            <option value="200kb_1u">ไฟล์ 200 KB (1 Concurrent User)</option>
+                            <option value="200kb_5u">ไฟล์ 200 KB (5 Concurrent Users)</option>
+                            <option value="3mb_1u">ไฟล์ 3 MB (1 Concurrent User)</option>
+                            <option value="3mb_5u">ไฟล์ 3 MB (5 Concurrent Users)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Metrics Grid for Baseline Selection -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mb-6">
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-center">
+                        <span class="text-[11px] text-slate-500 font-medium block">Throughput</span>
+                        <span id="bm-tp" class="text-lg font-bold text-blue-600">0.57</span>
+                        <span class="text-[10px] text-slate-400 block">signs/sec</span>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-center">
+                        <span class="text-[11px] text-slate-500 font-medium block">เวลาเฉลี่ย (Avg)</span>
+                        <span id="bm-avg" class="text-lg font-bold text-slate-800">1.76 s</span>
+                        <span id="bm-avg-ms" class="text-[10px] text-slate-400 block">1756.7 ms</span>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-center">
+                        <span class="text-[11px] text-slate-500 font-medium block">เร็วที่สุด (Min)</span>
+                        <span id="bm-min" class="text-lg font-bold text-emerald-600">1.40 s</span>
+                        <span id="bm-min-ms" class="text-[10px] text-slate-400 block">1397.9 ms</span>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-center">
+                        <span class="text-[11px] text-slate-500 font-medium block">กึ่งกลาง (P50)</span>
+                        <span id="bm-p50" class="text-lg font-bold text-indigo-600">1.46 s</span>
+                        <span id="bm-p50-ms" class="text-[10px] text-slate-400 block">1455.8 ms</span>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-center">
+                        <span class="text-[11px] text-slate-500 font-medium block">90% ไฟล์ (P90)</span>
+                        <span id="bm-p90" class="text-lg font-bold text-amber-600">1.56 s</span>
+                        <span id="bm-p90-ms" class="text-[10px] text-slate-400 block">1558.5 ms</span>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-center">
+                        <span class="text-[11px] text-slate-500 font-medium block">ช้าที่สุด (Max)</span>
+                        <span id="bm-max" class="text-lg font-bold text-rose-600">4.40 s</span>
+                        <span id="bm-max-ms" class="text-[10px] text-slate-400 block">4400.4 ms</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+                    <!-- Chart: Server Timing Breakdown -->
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col items-center">
+                        <h3 class="text-sm font-bold text-slate-800 mb-2 w-full text-left">🔍 Server-Timing Breakdown (ระยะเวลาแต่ละขั้นตอน)</h3>
+                        <p class="text-xs text-slate-500 mb-4 w-full text-left">แสดงสัดส่วนเวลาประมวลผลภายใน API Server (มิลลิวินาที)</p>
+                        <div class="chart-container">
+                            <canvas id="chartServerTiming"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Process Table & Analysis -->
+                    <div class="space-y-4">
+                        <div class="overflow-x-auto rounded-lg border border-slate-200">
+                            <table class="w-full text-xs text-left text-slate-600">
+                                <thead class="text-[11px] text-slate-700 uppercase bg-slate-100 border-b border-slate-200">
+                                    <tr>
+                                        <th class="px-3 py-2.5">ขั้นตอนการทำงาน (Process Step)</th>
+                                        <th class="px-3 py-2.5 text-right">เวลาเฉลี่ย (ms)</th>
+                                        <th class="px-3 py-2.5">การประเมินคอขวด</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-timing-body">
+                                    <!-- Dynamic Rows -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="p-4 bg-amber-50 rounded-lg border border-amber-200 text-xs text-amber-900 leading-relaxed">
+                            <span class="font-bold block mb-1">📌 ข้อสังเกตสำคัญจากการวิเคราะห์ Baseline:</span>
+                            <ul class="list-disc list-inside space-y-1 text-amber-800">
+                                <li><strong>Cold Start Effect:</strong> ค่า Max (ช้าที่สุด) ในรอบแรกของการทดสอบมีค่าสูง (4.4s - 6.2s) เนื่องจากการเปิดและเชื่อมต่อ Driver Smart Card ของ USB Token ในครั้งแรก</li>
+                                <li><strong>Hardware RSA Scaling:</strong> เมื่อ Concurrency เพิ่มจาก 1 เป็น 5 ผู้ใช้ เวลาในส่วน USB Token Sign เพิ่มขึ้นอย่างก้าวกระโดดจาก ~800ms เป็น <strong>2,500 - 2,878 ms</strong> เนื่องจากคำขอต้องรอคิวฮาร์ดแวร์</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: MIXED WORKLOAD SCENARIOS (CASE 1 vs CASE 2) -->
+        <section id="sec-workload" class="tab-content hidden space-y-6">
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">การทดสอบสภาวะการใช้งานจริง (Mixed Workload Scenarios)</h2>
+                        <p class="text-sm text-slate-600">เปรียบเทียบระหว่าง Case 1 (เน้นไฟล์เล็ก 200KB 40%) และ Case 2 (เน้นไฟล์ใหญ่ 3MB 40%) พร้อมแนบไฟล์ XML ทุกใบ</p>
+                    </div>
+                    <div class="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200">
+                        <button onclick="switchCase('case1')" id="btn-case1" class="px-4 py-1.5 text-xs font-semibold rounded-md transition bg-blue-600 text-white shadow-sm">
+                            Case 1 (เน้นไฟล์เล็ก)
+                        </button>
+                        <button onclick="switchCase('case2')" id="btn-case2" class="px-4 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 rounded-md transition">
+                            Case 2 (เน้นไฟล์ใหญ่)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Case Overview Summary Banner -->
+                <div id="case-summary-banner" class="p-4 bg-blue-50 border border-blue-200 rounded-xl mb-6 flex flex-wrap justify-between items-center gap-4 text-xs">
+                    <div>
+                        <span id="case-title" class="font-bold text-blue-900 text-sm block">Case 1: สัดส่วนไฟล์เล็กเป็นหลัก</span>
+                        <span id="case-desc" class="text-blue-700">200 KB (40%) | 500 KB (30%) | 1 MB (15%) | 2 MB (10%) | 3 MB (5%) + XML</span>
+                    </div>
+                    <div class="flex gap-4 font-medium">
+                        <div>
+                            <span class="text-slate-500 block text-[10px]">Peak Throughput</span>
+                            <span id="case-tp" class="text-sm font-bold text-blue-800">1.34 signs/sec</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block text-[10px]">Avg Wait @ 5 Users</span>
+                            <span id="case-wait" class="text-sm font-bold text-blue-800">3.48 วินาที</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block text-[10px]">Endurance Pass</span>
+                            <span class="text-sm font-bold text-emerald-700">100% (30/30 ใบ)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Table 1: 4 Standard Testing Levels -->
+                <div class="mb-6">
+                    <h3 class="text-sm font-bold text-slate-800 mb-3">📋 1. สรุปผลการทดสอบแยกตาม 4 ระดับมาตรฐาน</h3>
+                    <div class="overflow-x-auto rounded-lg border border-slate-200">
+                        <table class="w-full text-xs text-left text-slate-600">
+                            <thead class="text-[11px] text-slate-700 uppercase bg-slate-100 border-b border-slate-200">
+                                <tr>
+                                    <th class="px-3 py-2.5">ระดับการทดสอบ</th>
+                                    <th class="px-3 py-2.5">วัตถุประสงค์</th>
+                                    <th class="px-3 py-2.5">สภาวะการทดสอบ</th>
+                                    <th class="px-3 py-2.5 text-right">เวลาเฉลี่ยจนได้ไฟล์</th>
+                                    <th class="px-3 py-2.5 text-right">Throughput</th>
+                                    <th class="px-3 py-2.5">ผลการประเมิน</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-standard-levels">
+                                <!-- Dynamic Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Table 2: File Size Performance Breakdown -->
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-800 mb-3">📏 2. รายละเอียดความเร็วแยกตามขนาดไฟล์ (File Size Breakdown)</h3>
+                        <div class="overflow-x-auto rounded-lg border border-slate-200">
+                            <table class="w-full text-xs text-left text-slate-600">
+                                <thead class="text-[11px] text-slate-700 uppercase bg-slate-100 border-b border-slate-200">
+                                    <tr>
+                                        <th class="px-3 py-2.5">ขนาดเอกสาร</th>
+                                        <th class="px-3 py-2.5 text-center">จำนวน</th>
+                                        <th class="px-3 py-2.5 text-right">Avg Round-Trip</th>
+                                        <th class="px-3 py-2.5 text-right">ฝัง XML</th>
+                                        <th class="px-3 py-2.5 text-right">Token เซ็น</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-filesize-breakdown">
+                                    <!-- Dynamic Rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Concurrency Scaling Chart -->
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col items-center">
+                        <h3 class="text-sm font-bold text-slate-800 mb-1 w-full text-left">🧗 3. ผลกระทบจากความหนาแน่นผู้ใช้ (Concurrency Scaling)</h3>
+                        <p class="text-xs text-slate-500 mb-3 w-full text-left">เปรียบเทียบการเพิ่มขึ้นของเวลารอ (Avg & P90) เมื่อมี Concurrency 5 ➜ 20 Users</p>
+                        <div class="chart-container">
+                            <canvas id="chartConcurrencyScaling"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: STRESS & BREAKING POINT -->
+        <section id="sec-stress" class="tab-content hidden space-y-6">
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">การทดสอบหาจุดแตกหักของระบบ (Stress Breaking Point Report)</h2>
+                        <p class="text-sm text-slate-600">ทดสอบยิงโหลดไต่ระดับอย่างต่อเนื่องเพื่อค้นหาขีดจำกัดคิวสูงสุดและจุดล้มเหลวของระบบ</p>
+                    </div>
+                    <div class="flex items-center space-x-2 text-xs">
+                        <span class="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-semibold">Max Safe: 44 Users</span>
+                        <span class="bg-rose-100 text-rose-800 px-3 py-1 rounded-full font-semibold">Breaking Point: 46 Users</span>
+                    </div>
+                </div>
+
+                <!-- Callout Banner -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-900">
+                        <span class="text-xs text-emerald-600 font-bold block uppercase">Maximum Safe Capacity</span>
+                        <h3 class="text-xl font-bold text-emerald-800 mt-0.5">44 ผู้ใช้พร้อมกัน</h3>
+                        <p class="text-xs text-emerald-700 mt-1">
+                             Throughput 1.39 signs/s | เวลารอเฉลี่ย 26.89s (ช้าสุด 57.94s) | <strong>Success Rate 100%</strong>
+                        </p>
+                    </div>
+
+                    <div class="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-900">
+                        <span class="text-xs text-rose-600 font-bold block uppercase">System Breaking Point</span>
+                        <h3 class="text-xl font-bold text-rose-800 mt-0.5">46 ผู้ใช้พร้อมกัน</h3>
+                        <p class="text-xs text-rose-700 mt-1">
+                            เกิดข้อผิดพลาด <strong>Client Timeout</strong> (ล้มเหลว 2 ใบ/92 ใบ) อัตราสำเร็จลดลงเหลือ 97.8%
+                        </p>
+                    </div>
+
+                    <div class="p-4 bg-slate-900 text-white rounded-xl flex flex-col justify-between">
+                        <div>
+                            <span class="text-xs text-slate-400 font-bold block uppercase">Stress Session Summary</span>
+                            <span class="text-lg font-bold text-blue-400 mt-0.5 block">682 / 684 ใบ สำเร็จ</span>
+                        </div>
+                        <div class="text-xs text-slate-300">
+                            อัตราสำเร็จสะสมตลอดการทดสอบ: <strong class="text-emerald-400">99.7%</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step-by-Step Response Time Curve Chart -->
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6 flex flex-col items-center">
+                    <h3 class="text-sm font-bold text-slate-800 mb-1 w-full text-left">📈 กราฟการไต่ระดับเวลารอคิวและ Throughput (30 ➜ 46 Concurrency)</h3>
+                    <p class="text-xs text-slate-500 mb-3 w-full text-left">สังเกตว่า Throughput ชนเพดานที่ ~1.39 signs/s ขณะที่เวลารอเพิ่มขึ้นเป็นเส้นตรงจนเกิด Timeout ที่ระดับ 46</p>
+                    <div class="chart-container">
+                        <canvas id="chartBreakingPoint"></canvas>
+                    </div>
+                </div>
+
+                <!-- Detailed Step Table -->
+                <h3 class="text-sm font-bold text-slate-800 mb-3">📊 ตารางผลการไต่ระดับทีละ Concurrency (Step-by-Step Breakdown)</h3>
+                <div class="overflow-x-auto rounded-lg border border-slate-200">
+                    <table class="w-full text-xs text-left text-slate-600">
+                        <thead class="text-[11px] text-slate-700 uppercase bg-slate-100 border-b border-slate-200">
+                            <tr>
+                                <th class="px-3 py-2.5">Concurrency</th>
+                                <th class="px-3 py-2.5 text-center">จำนวนคำขอ</th>
+                                <th class="px-3 py-2.5 text-center">สำเร็จ / Error</th>
+                                <th class="px-3 py-2.5 text-right">เวลารอเฉลี่ย</th>
+                                <th class="px-3 py-2.5 text-right">เร็วที่สุด / ช้าที่สุด</th>
+                                <th class="px-3 py-2.5 text-right">Throughput</th>
+                                <th class="px-3 py-2.5">สถานะระบบ</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200">
+                            <tr class="bg-white hover:bg-slate-50">
+                                <td class="px-3 py-2.5 font-bold text-slate-800">30 ผู้ใช้</td>
+                                <td class="px-3 py-2.5 text-center">60 ใบ</td>
+                                <td class="px-3 py-2.5 text-center text-emerald-600 font-semibold">60 / 0</td>
+                                <td class="px-3 py-2.5 text-right">18.44 s</td>
+                                <td class="px-3 py-2.5 text-right">2.83s / 41.76s</td>
+                                <td class="px-3 py-2.5 text-right font-medium text-blue-600">1.37 signs/s</td>
+                                <td class="px-3 py-2.5"><span class="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded font-semibold">⚠️ หน่วงสูง (คิวยาว)</span></td>
+                            </tr>
+                            <tr class="bg-slate-50/50 hover:bg-slate-50">
+                                <td class="px-3 py-2.5 font-bold text-slate-800">32 ผู้ใช้</td>
+                                <td class="px-3 py-2.5 text-center">64 ใบ</td>
+                                <td class="px-3 py-2.5 text-center text-emerald-600 font-semibold">64 / 0</td>
+                                <td class="px-3 py-2.5 text-right">19.66 s</td>
+                                <td class="px-3 py-2.5 text-right">4.27s / 38.86s</td>
+                                <td class="px-3 py-2.5 text-right font-medium text-blue-600">1.39 signs/s</td>
+                                <td class="px-3 py-2.5"><span class="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded font-semibold">⚠️ หน่วงสูง (คิวยาว)</span></td>
+                            </tr>
+                            <tr class="bg-white hover:bg-slate-50">
+                                <td class="px-3 py-2.5 font-bold text-slate-800">34 ผู้ใช้</td>
+                                <td class="px-3 py-2.5 text-center">68 ใบ</td>
+                                <td class="px-3 py-2.5 text-center text-emerald-600 font-semibold">68 / 0</td>
+                                <td class="px-3 py-2.5 text-right">20.88 s</td>
+                                <td class="px-3 py-2.5 text-right">3.17s / 46.63s</td>
+                                <td class="px-3 py-2.5 text-right font-medium text-blue-600">1.39 signs/s</td>
+                                <td class="px-3 py-2.5"><span class="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded font-semibold">⚠️ หน่วงสูง (คิวยาว)</span></td>
+                            </tr>
+                            <tr class="bg-slate-50/50 hover:bg-slate-50">
+                                <td class="px-3 py-2.5 font-bold text-slate-800">36 ผู้ใช้</td>
+                                <td class="px-3 py-2.5 text-center">72 ใบ</td>
+                                <td class="px-3 py-2.5 text-center text-emerald-600 font-semibold">72 / 0</td>
+                                <td class="px-3 py-2.5 text-right">23.13 s</td>
+                                <td class="px-3 py-2.5 text-right">3.07s / 50.71s</td>
+                                <td class="px-3 py-2.5 text-right font-medium text-blue-600">1.38 signs/s</td>
+                                <td class="px-3 py-2.5"><span class="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded font-semibold">⚠️ หน่วงสูง (คิวยาว)</span></td>
+                            </tr>
+                            <tr class="bg-white hover:bg-slate-50">
+                                <td class="px-3 py-2.5 font-bold text-slate-800">38 ผู้ใช้</td>
+                                <td class="px-3 py-2.5 text-center">76 ใบ</td>
+                                <td class="px-3 py-2.5 text-center text-emerald-600 font-semibold">76 / 0</td>
+                                <td class="px-3 py-2.5 text-right">23.35 s</td>
+                                <td class="px-3 py-2.5 text-right">4.00s / 49.17s</td>
+                                <td class="px-3 py-2.5 text-right font-medium text-blue-600">1.39 signs/s</td>
+                                <td class="px-3 py-2.5"><span class="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded font-semibold">⚠️ หน่วงสูง (คิวยาว)</span></td>
+                            </tr>
+                            <tr class="bg-slate-50/50 hover:bg-slate-50">
+                                <td class="px-3 py-2.5 font-bold text-slate-800">40 ผู้ใช้</td>
+                                <td class="px-3 py-2.5 text-center">80 ใบ</td>
+                                <td class="px-3 py-2.5 text-center text-emerald-600 font-semibold">80 / 0</td>
+                                <td class="px-3 py-2.5 text-right">24.76 s</td>
+                                <td class="px-3 py-2.5 text-right">3.11s / 56.52s</td>
+                                <td class="px-3 py-2.5 text-right font-medium text-blue-600">1.38 signs/s</td>
+                                <td class="px-3 py-2.5"><span class="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded font-semibold">⚠️ หน่วงสูง (คิวยาว)</span></td>
+                            </tr>
+                            <tr class="bg-white hover:bg-slate-50">
+                                <td class="px-3 py-2.5 font-bold text-slate-800">42 ผู้ใช้</td>
+                                <td class="px-3 py-2.5 text-center">84 ใบ</td>
+                                <td class="px-3 py-2.5 text-center text-emerald-600 font-semibold">84 / 0</td>
+                                <td class="px-3 py-2.5 text-right">25.82 s</td>
+                                <td class="px-3 py-2.5 text-right">4.06s / 58.57s</td>
+                                <td class="px-3 py-2.5 text-right font-medium text-blue-600">1.39 signs/s</td>
+                                <td class="px-3 py-2.5"><span class="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded font-semibold">⚠️ หน่วงสูง (คิวยาว)</span></td>
+                            </tr>
+                            <tr class="bg-emerald-50/60 border-l-4 border-l-emerald-500 hover:bg-emerald-50">
+                                <td class="px-3 py-2.5 font-bold text-emerald-900">44 ผู้ใช้ (Safe Limit)</td>
+                                <td class="px-3 py-2.5 text-center font-bold">88 ใบ</td>
+                                <td class="px-3 py-2.5 text-center text-emerald-700 font-bold">88 / 0</td>
+                                <td class="px-3 py-2.5 text-right font-bold text-emerald-900">26.89 s</td>
+                                <td class="px-3 py-2.5 text-right font-medium">4.40s / 57.94s</td>
+                                <td class="px-3 py-2.5 text-right font-bold text-emerald-700">1.39 signs/s</td>
+                                <td class="px-3 py-2.5"><span class="bg-emerald-200 text-emerald-900 text-[10px] px-2.5 py-1 rounded font-bold">🛡️ ขีดจำกัดสูงสุดที่ปลอดภัย</span></td>
+                            </tr>
+                            <tr class="bg-rose-50/80 border-l-4 border-l-rose-500 hover:bg-rose-100">
+                                <td class="px-3 py-2.5 font-bold text-rose-900">46 ผู้ใช้ (Breaking Point)</td>
+                                <td class="px-3 py-2.5 text-center font-bold">92 ใบ</td>
+                                <td class="px-3 py-2.5 text-center text-rose-700 font-bold">90 / 2 Error</td>
+                                <td class="px-3 py-2.5 text-right font-bold text-rose-900">28.11 s</td>
+                                <td class="px-3 py-2.5 text-right font-medium">3.36s / 53.42s</td>
+                                <td class="px-3 py-2.5 text-right font-bold text-rose-700">1.36 signs/s</td>
+                                <td class="px-3 py-2.5"><span class="bg-rose-200 text-rose-900 text-[10px] px-2.5 py-1 rounded font-bold">💥 เกิด Timeout Error (จุดแตกหัก)</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 5: BOTTLENECK ANALYSIS & RECOMMENDATIONS -->
+        <section id="sec-recommendations" class="tab-content hidden space-y-6">
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <h2 class="text-xl font-bold text-slate-900 mb-2">การวิเคราะห์คอขวดและข้อเสนอแนะเชิงเทคนิค (Bottleneck & Recommendations)</h2>
+                <p class="text-sm text-slate-600 mb-6">สรุปผลการวิเคราะห์สาเหตุเชิงลึกและแนวทางการปรับปรุงสถาปัตยกรรมระบบสำหรับทีมพัฒนาและผู้ดูแลระบบ</p>
+
+                <!-- Process Sequence visual -->
+                <div class="mb-8">
+                    <h3 class="text-sm font-bold text-slate-800 mb-3">⚙️ ลำดับขั้นตอนการทำงานของ API (Internal Flow Analysis)</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="p-4 bg-rose-50 border border-rose-200 rounded-xl relative">
+                            <span class="text-xs bg-rose-200 text-rose-800 px-2 py-0.5 rounded font-bold">อันดับ 1 (Bottleneck)</span>
+                            <h4 class="font-bold text-rose-900 mt-2 text-sm">🔐 1. Hardware RSA Signing</h4>
+                            <span class="text-lg font-bold text-rose-700 block mt-1">2,500 - 2,878 ms</span>
+                            <p class="text-[11px] text-rose-800 mt-1">
+                                <strong>Hardware Limit:</strong> USB Token ทำงานแบบเข้าคิวเดี่ยว (Single Queue) ไม่รองรับการประมวลผลพร้อมกันในระดับฮาร์ดแวร์
+                            </p>
+                        </div>
+
+                        <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                            <span class="text-xs bg-amber-200 text-amber-800 px-2 py-0.5 rounded font-bold">อันดับ 2 (External)</span>
+                            <h4 class="font-bold text-amber-900 mt-2 text-sm">🌐 2. GlobalSign TSA & LTV</h4>
+                            <span class="text-lg font-bold text-amber-700 block mt-1">~650 ms</span>
+                            <p class="text-[11px] text-amber-800 mt-1">
+                                <strong>Network Latency:</strong> การประทับรับรองเวลา (RFC 3161) ขึ้นอยู่กับความเร็วการเชื่อมต่อเครือข่ายภายนอก
+                            </p>
+                        </div>
+
+                        <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                            <span class="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-bold">ปกติ (CPU Bound)</span>
+                            <h4 class="font-bold text-slate-800 mt-2 text-sm">📄 3. iText PDF/A & XML</h4>
+                            <span class="text-lg font-bold text-slate-700 block mt-1">5 - 22 ms</span>
+                            <p class="text-[11px] text-slate-600 mt-1">
+                                <strong>Server Fast Process:</strong> การฝังข้อมูล XML และสร้าง PDF/A-3B ทำงานรวดเร็วมาก แม้ไฟล์ขนาด 3 MB
+                            </p>
+                        </div>
+
+                        <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                            <span class="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-bold">เร็วมาก (Fast DB)</span>
+                            <h4 class="font-bold text-slate-800 mt-2 text-sm">💾 4. SQL Audit Log</h4>
+                            <span class="text-lg font-bold text-slate-700 block mt-1">3 - 17 ms</span>
+                            <p class="text-[11px] text-slate-600 mt-1">
+                                <strong>Database Storage:</strong> การบันทึกประวัติการทำงานลงฐานข้อมูลใช้เวลาน้อยมาก ไม่เป็นคอขวด
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actionable Recommendations Grid -->
+                <h3 class="text-sm font-bold text-slate-800 mb-3">💡 ข้อเสนอแนะเชิงสถาปัตยกรรม (Architectural Recommendations)</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center space-x-2 text-blue-600 mb-2">
+                                <span class="text-xl">⏱️</span>
+                                <h4 class="font-bold text-slate-900 text-sm">1. Client Timeout Configuration</h4>
+                            </div>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                เนื่องจากระบบมีพฤติกรรมการเข้าคิว (Queueing) เมื่อมีโหลดสูงขึ้น ส่งผลให้ Round-Trip Time ของคำขอท้ายคิวอาจยาวนานถึงเกือบ 60 วินาที (จากผลที่ 44 Users เวลารอสูงสุด 57.94s)
+                            </p>
+                            <div class="mt-3 p-3 bg-blue-100/60 rounded-lg text-xs text-blue-900 font-medium">
+                                👉 <strong>แนวทางแก้ไข:</strong> ตั้งค่า Timeout ฝั่ง Client Application ที่เรียกใช้ API นี้ให้ <strong>ไม่ต่ำกว่า 60 วินาที</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center space-x-2 text-indigo-600 mb-2">
+                                <span class="text-xl">🛠️</span>
+                                <h4 class="font-bold text-slate-900 text-sm">2. Hardware Scaling Strategy</h4>
+                            </div>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                การอัปเกรด CPU หรือ RAM ของ Application Server จะ <strong>ไม่ช่วยเพิ่ม Throughput</strong> ของระบบ เนื่องจากคอขวดอยู่ที่ฮาร์ดแวร์ USB Token ที่รองรับสูงสุด ~1.39 ไฟล์/วินาที
+                            </p>
+                            <div class="mt-3 p-3 bg-indigo-100/60 rounded-lg text-xs text-indigo-900 font-medium">
+                                👉 <strong>แนวทางแก้ไข:</strong> หากต้องการเพิ่ม Speed ต้องใช้งาน <strong>Multiple USB Tokens (Load Balance)</strong> หรือเปลี่ยนไปใช้ Enterprise HSM
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center space-x-2 text-emerald-600 mb-2">
+                                <span class="text-xl">📥</span>
+                                <h4 class="font-bold text-slate-900 text-sm">3. Load Leveling via Message Queue</h4>
+                            </div>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                ป้องกันปัญหา HTTP Timeout เมื่อระบบถูกยิงคำขอเข้ามาพร้อมกันเกิน 40 คำขอ ซึ่งเสี่ยงต่อการเกิดความล้มเหลวในการส่งข้อมูล
+                            </p>
+                            <div class="mt-3 p-3 bg-emerald-100/60 rounded-lg text-xs text-emerald-900 font-medium">
+                                👉 <strong>แนวทางแก้ไข:</strong> นำระบบ Message Queue (เช่น <strong>RabbitMQ หรือ Kafka</strong>) มาพัก Request ก่อนส่งให้ USB Token ประมวลผลตามคิว
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 6: INTERACTIVE QUEUE WAIT ESTIMATOR TOOL -->
+        <section id="sec-calculator" class="tab-content hidden space-y-6">
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <h2 class="text-xl font-bold text-slate-900 mb-2">🧮 เครื่องมือประมาณการเวลารอคิว (Queue Wait Time Estimator)</h2>
+                <p class="text-sm text-slate-600 mb-6">จำลองการคำนวณเวลารอคิวเฉลี่ยและประเมินความเสี่ยง Timeout ตามจำนวนผู้ใช้งานพร้อมกันจริง</p>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                    <!-- Controls -->
+                    <div class="bg-slate-50 p-6 rounded-xl border border-slate-200 space-y-5">
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label for="input-users" class="text-xs font-bold text-slate-700">จำนวนผู้ใช้งานพร้อมกัน (Concurrency Users):</label>
+                                <span id="val-users" class="text-sm font-bold text-blue-600">15 Users</span>
+                            </div>
+                            <input type="range" id="input-users" min="1" max="50" value="15" oninput="calculateQueueTime()" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                            <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+                                <span>1 User (Baseline)</span>
+                                <span>20 Users</span>
+                                <span>44 Users (Safe Max)</span>
+                                <span>50 Users (Overload)</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label for="input-files" class="text-xs font-bold text-slate-700">จำนวนเอกสารรวมใน Batch:</label>
+                                <span id="val-files" class="text-sm font-bold text-blue-600">30 ไฟล์</span>
+                            </div>
+                            <input type="range" id="input-files" min="5" max="100" value="30" step="5" oninput="calculateQueueTime()" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                        </div>
+
+                        <div>
+                            <label for="input-timeout" class="text-xs font-bold text-slate-700 block mb-1">การตั้งค่า Client Timeout (วินาที):</label>
+                            <input type="number" id="input-timeout" value="60" min="10" max="120" onchange="calculateQueueTime()" class="w-full bg-white border border-slate-300 text-slate-800 text-xs rounded-lg px-3 py-2 font-medium focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <!-- Output Estimation Card -->
+                    <div id="est-card" class="p-6 rounded-xl border border-slate-200 bg-slate-900 text-white flex flex-col justify-between space-y-4">
+                        <div>
+                            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                                <span class="text-xs text-slate-400 font-semibold uppercase">Est. System Response</span>
+                                <span id="est-status-badge" class="bg-emerald-500/20 text-emerald-400 text-xs px-2.5 py-1 rounded-md font-bold">🟢 สภาวะปลอดภัย (Safe)</span>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4 my-4">
+                                <div>
+                                    <span class="text-[11px] text-slate-400 block">Throughput ที่ทำได้จริง</span>
+                                    <span id="est-tp" class="text-2xl font-bold text-blue-400">1.35</span>
+                                    <span class="text-xs text-slate-400 block">signs/sec</span>
+                                </div>
+                                <div>
+                                    <span class="text-[11px] text-slate-400 block">เวลารอเฉลี่ย (Avg Wait)</span>
+                                    <span id="est-avg-wait" class="text-2xl font-bold text-amber-400">9.64</span>
+                                    <span class="text-xs text-slate-400 block">วินาที / ไฟล์</span>
+                                </div>
+                            </div>
+
+                            <div class="space-y-2 border-t border-slate-800 pt-3 text-xs">
+                                <div class="flex justify-between text-slate-300">
+                                    <span>เวลารอสูงสุดท้ายคิว (Est. Max Wait):</span>
+                                    <span id="est-max-wait" class="font-bold text-white">14.7 วินาที</span>
+                                </div>
+                                <div class="flex justify-between text-slate-300">
+                                    <span>เวลาประมวลผล Batch ทั้งหมด:</span>
+                                    <span id="est-total-batch" class="font-bold text-white">22.2 วินาที</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="est-recommendation-box" class="p-3 bg-slate-800 rounded-lg text-xs border border-slate-700 mt-4">
+                            <span class="text-blue-300 font-semibold block">คำแนะนำสำหรับค่านี้:</span>
+                            <span id="est-recommendation-text" class="text-slate-300 text-[11px] mt-0.5 block">
+                                ระบบทำงานอยู่ในสภาวะปกติ ตั้งค่า Client Timeout ที่ 60 วินาที ครอบคลุมการรอคิวได้อย่างปลอดภัย
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 text-center text-xs text-slate-400">
+        <p>USB Token Sign API Performance Test & Analysis Report • 14 September 2026</p>
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // DATA STORAGE (Source Report Data)
+        const baselineData = {
+            '200kb_1u': {
+                tp: '0.57', avg: '1.76 s', avgMs: '1756.7 ms', min: '1.40 s', minMs: '1397.9 ms',
+                p50: '1.46 s', p50Ms: '1455.8 ms', p90: '1.56 s', p90Ms: '1558.5 ms', max: '4.40 s', maxMs: '4400.4 ms',
+                timing: [
+                    { step: '🔐 1. USB Token Hardware RSA Signing', ms: 804.0, eval: 'Hardware Bottleneck (อันดับ 1)', class: 'text-rose-600 font-semibold' },
+                    { step: '🌐 2. GlobalSign TSA & LTV (RFC 3161)', ms: 688.1, eval: 'External Network (อันดับ 2)', class: 'text-amber-600' },
+                    { step: '📄 3. iText PDF/A-3B & XML Attachment', ms: 22.6, eval: 'ปกติ (CPU Bound)', class: 'text-slate-600' },
+                    { step: '💾 4. SQL Server Audit Logging', ms: 17.4, eval: 'เร็วมาก (Fast DB)', class: 'text-slate-600' }
+                ]
+            },
+            '200kb_5u': {
+                tp: '1.24', avg: '3.61 s', avgMs: '3607.0 ms', min: '2.22 s', minMs: '2219.1 ms',
+                p50: '3.54 s', p50Ms: '3538.2 ms', p90: '4.74 s', p90Ms: '4744.3 ms', max: '5.19 s', maxMs: '5188.4 ms',
+                timing: [
+                    { step: '🔐 1. USB Token Hardware RSA Signing', ms: 2878.7, eval: 'Hardware Bottleneck (คิวยาว)', class: 'text-rose-600 font-semibold' },
+                    { step: '🌐 2. GlobalSign TSA & LTV (RFC 3161)', ms: 650.1, eval: 'External Network', class: 'text-amber-600' },
+                    { step: '📄 3. iText PDF/A-3B & XML Attachment', ms: 5.5, eval: 'ปกติ (CPU Bound)', class: 'text-slate-600' },
+                    { step: '💾 4. SQL Server Audit Logging', ms: 3.6, eval: 'เร็วมาก (Fast DB)', class: 'text-slate-600' }
+                ]
+            },
+            '3mb_1u': {
+                tp: '0.67', avg: '1.48 s', avgMs: '1480.2 ms', min: '1.43 s', minMs: '1434.0 ms',
+                p50: '1.45 s', p50Ms: '1451.1 ms', p90: '1.48 s', p90Ms: '1477.0 ms', max: '1.71 s', maxMs: '1712.0 ms',
+                timing: [
+                    { step: '🔐 1. USB Token Hardware RSA Signing', ms: 741.2, eval: 'Hardware Bottleneck', class: 'text-rose-600 font-semibold' },
+                    { step: '🌐 2. GlobalSign TSA & LTV (RFC 3161)', ms: 625.7, eval: 'External Network', class: 'text-amber-600' },
+                    { step: '📄 3. iText PDF/A-3B & XML Attachment', ms: 6.0, eval: 'ปกติ (CPU Bound)', class: 'text-slate-600' },
+                    { step: '💾 4. SQL Server Audit Logging', ms: 3.9, eval: 'เร็วมาก (Fast DB)', class: 'text-slate-600' }
+                ]
+            },
+            '3mb_5u': {
+                tp: '1.22', avg: '3.51 s', avgMs: '3510.6 ms', min: '2.25 s', minMs: '2253.0 ms',
+                p50: '3.12 s', p50Ms: '3123.3 ms', p90: '4.39 s', p90Ms: '4390.1 ms', max: '6.22 s', maxMs: '6219.4 ms',
+                timing: [
+                    { step: '🔐 1. USB Token Hardware RSA Signing', ms: 2598.5, eval: 'Hardware Bottleneck (คิวยาว)', class: 'text-rose-600 font-semibold' },
+                    { step: '🌐 2. GlobalSign TSA & LTV (RFC 3161)', ms: 652.1, eval: 'External Network', class: 'text-amber-600' },
+                    { step: '📄 3. iText PDF/A-3B & XML Attachment', ms: 11.6, eval: 'ปกติ (CPU Bound)', class: 'text-slate-600' },
+                    { step: '💾 4. SQL Server Audit Logging', ms: 3.0, eval: 'เร็วมาก (Fast DB)', class: 'text-slate-600' }
+                ]
+            }
+        };
+
+        const workloadCases = {
+            case1: {
+                title: 'Case 1: สัดส่วนไฟล์เล็กเป็นหลัก (40% @ 200KB)',
+                desc: '200 KB (40%) | 500 KB (30%) | 1 MB (15%) | 2 MB (10%) | 3 MB (5%) + แนบ XML ทุกใบ',
+                tp: '1.34 signs/sec', wait: '3.48 วินาที',
+                standardLevels: [
+                    { name: '1. Smoke Testing', purpose: 'ตรวจความพร้อมเบื้องต้น', cond: '1 User, 5 ใบ (ครบ 5 ขนาด)', time: '1.76 s', tp: '0.57 signs/s', result: '✓ ผ่าน 100%', resClass: 'text-emerald-600 font-bold' },
+                    { name: '2. Load Testing', purpose: 'จำลองช่วงเวลา Peak Hours', cond: '5 Users, 25 ใบ (คละสัดส่วน)', time: '3.48 s', tp: '1.34 signs/s', result: '✓ พร้อมใช้งาน', resClass: 'text-emerald-600 font-bold' },
+                    { name: '3. Stress Testing', purpose: 'หาจุดติดขัดของคิว', cond: 'ไต่ระดับ 5 ➜ 20 Users (100 ใบ)', time: '12.92 s', tp: '1.36 signs/s', result: '⏳ พบคอขวด HW', resClass: 'text-amber-600 font-bold' },
+                    { name: '4. Endurance Testing', purpose: 'เช็ค Memory Leak ระยะยาว', cond: '3 Users คงที่, 30 ใบต่อเนื่อง', time: '2.22 s', tp: '1.31 signs/s', result: '✓ เสถียรภาพดีเยี่ยม', resClass: 'text-emerald-600 font-bold' }
+                ],
+                filesBreakdown: [
+                    { size: '200 KB (1 หน้า)', count: '63 ใบ', roundTrip: '7.05s', xml: '5.2 ms', token: '6134.9 ms' },
+                    { size: '500 KB (3 หน้า)', count: '48 ใบ', roundTrip: '7.04s', xml: '5.1 ms', token: '6012.4 ms' },
+                    { size: '1 MB (5 หน้า)', count: '23 ใบ', roundTrip: '7.24s', xml: '5.1 ms', token: '6084.4 ms' },
+                    { size: '2 MB (10 หน้า)', count: '16 ใบ', roundTrip: '7.13s', xml: '8.3 ms', token: '5834.2 ms' },
+                    { size: '3 MB (20 หน้า)', count: '10 ใบ', roundTrip: '6.84s', xml: '8.8 ms', token: '5531.2 ms' }
+                ],
+                concurrencyScaling: {
+                    labels: ['5 Users', '10 Users', '15 Users', '20 Users'],
+                    avg: [3.59, 6.34, 9.64, 12.92],
+                    p90: [4.36, 8.35, 13.23, 18.97]
+                }
+            },
+            case2: {
+                title: 'Case 2: สัดส่วนไฟล์ใหญ่เป็นหลัก (40% @ 3MB)',
+                desc: '3 MB (40%) | 2 MB (30%) | 1 MB (15%) | 500 KB (10%) | 200 KB (5%) + แนบ XML ทุกใบ',
+                tp: '1.33 signs/sec', wait: '3.48 วินาที',
+                standardLevels: [
+                    { name: '1. Smoke Testing', purpose: 'ตรวจความพร้อมเบื้องต้น', cond: '1 User, 5 ใบ (ครบ 5 ขนาด)', time: '1.40 s', tp: '0.71 signs/s', result: '✓ ผ่าน 100%', resClass: 'text-emerald-600 font-bold' },
+                    { name: '2. Load Testing', purpose: 'จำลองช่วงเวลา Peak Hours', cond: '5 Users, 25 ใบ (คละสัดส่วน)', time: '3.48 s', tp: '1.33 signs/s', result: '✓ พร้อมใช้งาน', resClass: 'text-emerald-600 font-bold' },
+                    { name: '3. Stress Testing', purpose: 'หาจุดติดขัดของคิว', cond: 'ไต่ระดับ 5 ➜ 20 Users (100 ใบ)', time: '12.73 s', tp: '1.34 signs/s', result: '⏳ พบคอขวด HW', resClass: 'text-amber-600 font-bold' },
+                    { name: '4. Endurance Testing', purpose: 'เช็ค Memory Leak ระยะยาว', cond: '3 Users คงที่, 30 ใบต่อเนื่อง', time: '2.23 s', tp: '1.30 signs/s', result: '✓ เสถียรภาพดีเยี่ยม', resClass: 'text-emerald-600 font-bold' }
+                ],
+                filesBreakdown: [
+                    { size: '200 KB (1 หน้า)', count: '10 ใบ', roundTrip: '5.71s', xml: '1.8 ms', token: '5018.9 ms' },
+                    { size: '500 KB (3 หน้า)', count: '17 ใบ', roundTrip: '6.46s', xml: '3.9 ms', token: '5764.1 ms' },
+                    { size: '1 MB (5 หน้า)', count: '23 ใบ', roundTrip: '5.79s', xml: '3.9 ms', token: '5047.1 ms' },
+                    { size: '2 MB (10 หน้า)', count: '47 ใบ', roundTrip: '7.77s', xml: '6.8 ms', token: '6703.2 ms' },
+                    { size: '3 MB (20 หน้า)', count: '63 ใบ', roundTrip: '7.49s', xml: '11.0 ms', token: '6398.3 ms' }
+                ],
+                concurrencyScaling: {
+                    labels: ['5 Users', '10 Users', '15 Users', '20 Users'],
+                    avg: [3.42, 6.66, 10.00, 12.73],
+                    p90: [4.41, 9.61, 16.25, 19.25]
+                }
+            }
+        };
+
+        // Chart instances holder
+        let chartServerTimingInstance = null;
+        let chartConcurrencyScalingInstance = null;
+        let chartBreakingPointInstance = null;
+        let activeCase = 'case1';
+
+        // TAB SWITCHING LOGIC
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-blue-600', 'text-white');
+                btn.classList.add('bg-slate-800', 'text-slate-300');
+            });
+
+            document.getElementById(`sec-${tabId}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            activeBtn.classList.add('active');
+            activeBtn.classList.remove('bg-slate-800', 'text-slate-300');
+
+            // Render/Resize charts when tab becomes visible
+            if (tabId === 'baseline') {
+                renderServerTimingChart();
+            } else if (tabId === 'workload') {
+                renderConcurrencyScalingChart();
+            } else if (tabId === 'stress') {
+                renderBreakingPointChart();
+            } else if (tabId === 'calculator') {
+                calculateQueueTime();
+            }
+        }
+
+        // BASELINE VIEW UPDATER
+        function updateBaselineView() {
+            const key = document.getElementById('baseline-selector').value;
+            const data = baselineData[key];
+
+            document.getElementById('bm-tp').innerText = data.tp;
+            document.getElementById('bm-avg').innerText = data.avg;
+            document.getElementById('bm-avg-ms').innerText = data.avgMs;
+            document.getElementById('bm-min').innerText = data.min;
+            document.getElementById('bm-min-ms').innerText = data.minMs;
+            document.getElementById('bm-p50').innerText = data.p50;
+            document.getElementById('bm-p50-ms').innerText = data.p50Ms;
+            document.getElementById('bm-p90').innerText = data.p90;
+            document.getElementById('bm-p90-ms').innerText = data.p90Ms;
+            document.getElementById('bm-max').innerText = data.max;
+            document.getElementById('bm-max-ms').innerText = data.maxMs;
+
+            // Render Table
+            const tbody = document.getElementById('table-timing-body');
+            tbody.innerHTML = '';
+            data.timing.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = "bg-white border-b border-slate-100 hover:bg-slate-50";
+                tr.innerHTML = `
+                    <td class="px-3 py-2.5 font-medium text-slate-800">${row.step}</td>
+                    <td class="px-3 py-2.5 text-right font-bold text-slate-900">${row.ms.toLocaleString()} ms</td>
+                    <td class="px-3 py-2.5 ${row.class}">${row.eval}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            renderServerTimingChart();
+        }
+
+        // CHART 1: Server Timing Breakdown Chart
+        function renderServerTimingChart() {
+            const key = document.getElementById('baseline-selector').value;
+            const data = baselineData[key];
+
+            const ctx = document.getElementById('chartServerTiming').getContext('2d');
+            if (chartServerTimingInstance) chartServerTimingInstance.destroy();
+
+            chartServerTimingInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['HW RSA Signing', 'GlobalSign TSA', 'iText XML', 'SQL Log'],
+                    datasets: [{
+                        label: 'เวลาประมวลผล (ms)',
+                        data: data.timing.map(t => t.ms),
+                        backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'],
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => ` ${ctx.raw} ms`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: '#f1f5f9' },
+                            title: { display: true, text: 'มิลลิวินาที (ms)', font: { size: 10 } }
+                        },
+                        y: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // WORKLOAD CASE SWITCHER
+        function switchCase(cKey) {
+            activeCase = cKey;
+            document.getElementById('btn-case1').className = cKey === 'case1' 
+                ? 'px-4 py-1.5 text-xs font-semibold rounded-md transition bg-blue-600 text-white shadow-sm'
+                : 'px-4 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 rounded-md transition';
+            document.getElementById('btn-case2').className = cKey === 'case2' 
+                ? 'px-4 py-1.5 text-xs font-semibold rounded-md transition bg-blue-600 text-white shadow-sm'
+                : 'px-4 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 rounded-md transition';
+
+            const cData = workloadCases[cKey];
+            document.getElementById('case-title').innerText = cData.title;
+            document.getElementById('case-desc').innerText = cData.desc;
+            document.getElementById('case-tp').innerText = cData.tp;
+            document.getElementById('case-wait').innerText = cData.wait;
+
+            // Render Standard Levels Table
+            const tbodyStd = document.getElementById('table-standard-levels');
+            tbodyStd.innerHTML = '';
+            cData.standardLevels.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.className = "bg-white border-b border-slate-100 hover:bg-slate-50";
+                tr.innerHTML = `
+                    <td class="px-3 py-2.5 font-bold text-slate-800">${r.name}</td>
+                    <td class="px-3 py-2.5 text-slate-600">${r.purpose}</td>
+                    <td class="px-3 py-2.5 text-slate-500">${r.cond}</td>
+                    <td class="px-3 py-2.5 text-right font-medium text-slate-800">${r.time}</td>
+                    <td class="px-3 py-2.5 text-right font-semibold text-blue-600">${r.tp}</td>
+                    <td class="px-3 py-2.5 ${r.resClass}">${r.result}</td>
+                `;
+                tbodyStd.appendChild(tr);
+            });
+
+            // Render File Breakdown Table
+            const tbodyFiles = document.getElementById('table-filesize-breakdown');
+            tbodyFiles.innerHTML = '';
+            cData.filesBreakdown.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.className = "bg-white border-b border-slate-100 hover:bg-slate-50";
+                tr.innerHTML = `
+                    <td class="px-3 py-2.5 font-medium text-slate-800">${r.size}</td>
+                    <td class="px-3 py-2.5 text-center text-slate-500">${r.count}</td>
+                    <td class="px-3 py-2.5 text-right font-bold text-slate-800">${r.roundTrip}</td>
+                    <td class="px-3 py-2.5 text-right text-slate-600">${r.xml}</td>
+                    <td class="px-3 py-2.5 text-right text-rose-600 font-semibold">${r.token}</td>
+                `;
+                tbodyFiles.appendChild(tr);
+            });
+
+            renderConcurrencyScalingChart();
+        }
+
+        // CHART 2: Concurrency Scaling Chart
+        function renderConcurrencyScalingChart() {
+            const cData = workloadCases[activeCase];
+            const ctx = document.getElementById('chartConcurrencyScaling').getContext('2d');
+            if (chartConcurrencyScalingInstance) chartConcurrencyScalingInstance.destroy();
+
+            chartConcurrencyScalingInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: cData.concurrencyScaling.labels,
+                    datasets: [
+                        {
+                            label: 'เวลารอเฉลี่ย (Avg Wait Sec)',
+                            data: cData.concurrencyScaling.avg,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.3
+                        },
+                        {
+                            label: 'เวลา 90% ของไฟล์ (P90 Wait Sec)',
+                            data: cData.concurrencyScaling.p90,
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top', labels: { font: { size: 11 } } }
+                    },
+                    scales: {
+                        x: { grid: { color: '#f1f5f9' } },
+                        y: { 
+                            grid: { color: '#f1f5f9' },
+                            title: { display: true, text: 'ระยะเวลารอ (วินาที)', font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // CHART 3: Stress Breaking Point Chart
+        function renderBreakingPointChart() {
+            const ctx = document.getElementById('chartBreakingPoint').getContext('2d');
+            if (chartBreakingPointInstance) chartBreakingPointInstance.destroy();
+
+            const labels = ['30 Users', '32 Users', '34 Users', '36 Users', '38 Users', '40 Users', '42 Users', '44 Users (Safe)', '46 Users (Break)'];
+            const avgWait = [18.44, 19.66, 20.88, 23.13, 23.35, 24.76, 25.82, 26.89, 28.11];
+            const maxWait = [41.76, 38.86, 46.63, 50.71, 49.17, 56.52, 58.57, 57.94, 53.42];
+            const tp = [1.37, 1.39, 1.39, 1.38, 1.39, 1.38, 1.39, 1.39, 1.36];
+
+            chartBreakingPointInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'เวลารอเฉลี่ย (วินาที)',
+                            data: avgWait,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            yAxisID: 'y',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.2
+                        },
+                        {
+                            label: 'เวลารอนานที่สุด Max (วินาที)',
+                            data: maxWait,
+                            borderColor: '#f59e0b',
+                            yAxisID: 'y',
+                            borderWidth: 2,
+                            borderDash: [4, 4],
+                            tension: 0.2
+                        },
+                        {
+                            label: 'Throughput (Signs/Sec)',
+                            data: tp,
+                            borderColor: '#10b981',
+                            yAxisID: 'y1',
+                            borderWidth: 2,
+                            tension: 0.1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top', labels: { font: { size: 11 } } },
+                        tooltip: {
+                            callbacks: {
+                                footer: (items) => {
+                                    if (items[0].dataIndex === 7) return '🛡️ Safe Maximum Limit';
+                                    if (items[0].dataIndex === 8) return '💥 Breaking Point (2 Timeout Errors)';
+                                    return '';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { grid: { color: '#f1f5f9' } },
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: { display: true, text: 'ระยะเวลารอ (วินาที)', font: { size: 10 } },
+                            grid: { color: '#f1f5f9' }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            min: 1.0,
+                            max: 1.6,
+                            title: { display: true, text: 'Throughput (signs/s)', font: { size: 10 } },
+                            grid: { drawOnChartArea: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        // INTERACTIVE CALCULATOR LOGIC
+        function calculateQueueTime() {
+            const users = parseInt(document.getElementById('input-users').value);
+            const files = parseInt(document.getElementById('input-files').value);
+            const timeout = parseInt(document.getElementById('input-timeout').value);
+
+            document.getElementById('val-users').innerText = `${users} Users`;
+            document.getElementById('val-files').innerText = `${files} ไฟล์`;
+
+            // Core Formula derived from actual benchmark data
+            // Hardware throughput ceiling is ~1.36 - 1.39 signs/s (avg 1.37)
+            const baseTp = users > 44 ? 1.35 : 1.37;
+            const avgWait = (users * 0.61).toFixed(2); // Linear queue estimation
+            const maxWait = (avgWait * 2.15).toFixed(1);
+            const totalBatchTime = (files / baseTp).toFixed(1);
+
+            document.getElementById('est-tp').innerText = baseTp.toFixed(2);
+            document.getElementById('est-avg-wait').innerText = avgWait;
+            document.getElementById('est-max-wait').innerText = `${maxWait} วินาที`;
+            document.getElementById('est-total-batch').innerText = `${totalBatchTime} วินาที`;
+
+            // System Status Assessment
+            const badge = document.getElementById('est-status-badge');
+            const recText = document.getElementById('est-recommendation-text');
+
+            if (users <= 20) {
+                badge.className = "bg-emerald-500/20 text-emerald-400 text-xs px-2.5 py-1 rounded-md font-bold";
+                badge.innerText = "🟢 สภาวะปกติ (Normal Load)";
+                recText.innerText = `ระบบทำงานได้รวดเร็ว เวลารอสูงสุด ~${maxWait}s ไม่มีความเสี่ยงเรื่อง Timeout สามารถรองรับได้อย่างปลอดภัย`;
+            } else if (users <= 44) {
+                badge.className = "bg-amber-500/20 text-amber-400 text-xs px-2.5 py-1 rounded-md font-bold";
+                badge.innerText = "⚠️ สภาวะคิวยาว (High Queue Load)";
+                recText.innerText = `คิวฮาร์ดแวร์หน่วงสูง เวลารอสูงสุดพุ่งถึง ~${maxWait}s ควรตรวจสอบให้แน่ใจว่า Client Timeout ถูกตั้งไว้ไม่ต่ำกว่า ${Math.max(timeout, Math.ceil(maxWait))} วินาที`;
+            } else {
+                badge.className = "bg-rose-500/20 text-rose-400 text-xs px-2.5 py-1 rounded-md font-bold";
+                badge.innerText = "💥 เกิดความเสี่ยง Timeout (Overload)";
+                recText.innerText = `คำเตือน! Concurrency ${users} เกินขีดจำกัดปลอดภัย (44 Users) คาดว่าจะมีคำขอบางส่วนเกิด Client Timeout หรือถูกตัดการเชื่อมต่อก่อนเซ็นเสร็จ`;
+            }
+        }
+
+        // INITIALIZATION ON PAGE LOAD
+        window.addEventListener('DOMContentLoaded', () => {
+            updateBaselineView();
+            switchCase('case1');
+        });
+    </script>
+</body>
+</html>
