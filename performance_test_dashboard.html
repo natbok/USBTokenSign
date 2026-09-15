@@ -62,7 +62,7 @@
 
     <!-- Top Header Banner -->
     <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-50 shadow-md">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div class="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
                     <div class="flex items-center space-x-2">
@@ -91,7 +91,7 @@
             <!-- Navigation Bar -->
             <nav class="flex space-x-2 mt-4 overflow-x-auto custom-scrollbar pb-1 text-xs sm:text-sm">
                 <button onclick="switchTab('exec')" id="tab-exec" class="tab-btn active px-4 py-2 rounded-lg font-medium transition border border-transparent whitespace-nowrap">
-                    📊 บทสรุปผู้บริหาร
+                    📊 บทสรุป
                 </button>
                 <button onclick="switchTab('baseline')" id="tab-baseline" class="tab-btn bg-slate-800 text-slate-300 hover:bg-slate-700 px-4 py-2 rounded-lg font-medium transition border border-slate-700 whitespace-nowrap">
                     ⚡ Baseline & Server Timing
@@ -105,15 +105,19 @@
                 <button onclick="switchTab('recommendations')" id="tab-recommendations" class="tab-btn bg-slate-800 text-slate-300 hover:bg-slate-700 px-4 py-2 rounded-lg font-medium transition border border-slate-700 whitespace-nowrap">
                     💡 การวิเคราะห์คอขวด & คำแนะนำ
                 </button>
-                <button onclick="switchTab('calculator')" id="tab-calculator" class="tab-btn bg-slate-800 text-slate-300 hover:bg-slate-700 px-4 py-2 rounded-lg font-medium transition border border-slate-700 whitespace-nowrap">
+                <!-- <button onclick="switchTab('calculator')" id="tab-calculator" class="tab-btn bg-slate-800 text-slate-300 hover:bg-slate-700 px-4 py-2 rounded-lg font-medium transition border border-slate-700 whitespace-nowrap">
                     🧮 เครื่องคำนวณเวลารอคิว
-                </button>
+                </button> -->
+
+                <!-- <button onclick="switchTab('pc')" id="tab-pc" class="tab-btn bg-slate-800 text-slate-300 hover:bg-slate-700 px-4 py-2 rounded-lg font-medium transition border border-slate-700 whitespace-nowrap">
+                    PC 
+                </button> -->
             </nav>
         </div>
     </header>
 
     <!-- Main Content Container -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+    <main class="max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
 
         <!-- Top Overview Stats (Always Visible Key Metrics) -->
         <section class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -169,7 +173,7 @@
         <!-- SECTION 1: EXECUTIVE SUMMARY -->
         <section id="sec-exec" class="tab-content space-y-6">
             <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                <h2 class="text-xl font-bold text-slate-900 mb-2">บทสรุปผู้บริหาร (Executive Summary)</h2>
+                <h2 class="text-xl font-bold text-slate-900 mb-2">บทสรุป (Summary)</h2>
                 <p class="text-sm text-slate-600 leading-relaxed mb-6">
                     ส่วนนี้สรุปผลการประเมินประสิทธิภาพของระบบ <strong>USB Token Sign API</strong> จากการทดสอบแบบรอบด้านครอบคลุมการวัด Baseline, โหลดสภาวะปกติ (Load), การทดสอบสภาวะเค้นสูง (Stress), การทดสอบความเสถียรระยะยาว (Endurance), และการหาจุดแตกหักของระบบ (Breaking Point) เพื่อวางแผนรองรับปริมาณธุรกรรมอิเล็กทรอนิกส์ขององค์กรได้อย่างปลอดภัย
                 </p>
@@ -635,7 +639,7 @@
                         <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl">
                             <span class="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-bold">เร็วมาก (Fast DB)</span>
                             <h4 class="font-bold text-slate-800 mt-2 text-sm">💾 4. SQL Audit Log</h4>
-                            <span class="text-lg font-bold text-slate-700 block mt-1">3 - 17 ms</span>
+                            <span class="text-lg font-bold text-slate-700 block mt-1">0.0 - 0.1 ms</span>
                             <p class="text-[11px] text-slate-600 mt-1">
                                 <strong>Database Storage:</strong> การบันทึกประวัติการทำงานลงฐานข้อมูลใช้เวลาน้อยมาก ไม่เป็นคอขวด
                             </p>
@@ -774,6 +778,16 @@
                 </div>
             </div>
         </section>
+
+
+         <!-- SECTION 7: prefromance with PC -->
+        <section id="sec-pc" class="tab-content hidden space-y-6">
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <h2 class="text-xl font-bold text-slate-900 mb-2">🧮 เครื่องมือประมาณการเวลารอคิว (Queue Wait Time Estimator)</h2>
+               
+                <img src="" alt="">
+            </div>
+        </section>
     </main>
 
     <!-- Footer -->
@@ -792,7 +806,7 @@
                     { step: '🔐 1. USB Token Hardware RSA Signing', ms: 804.0, eval: 'Hardware Bottleneck (อันดับ 1)', class: 'text-rose-600 font-semibold' },
                     { step: '🌐 2. GlobalSign TSA & LTV (RFC 3161)', ms: 688.1, eval: 'External Network (อันดับ 2)', class: 'text-amber-600' },
                     { step: '📄 3. iText PDF/A-3B & XML Attachment', ms: 22.6, eval: 'ปกติ (CPU Bound)', class: 'text-slate-600' },
-                    { step: '💾 4. SQL Server Audit Logging', ms: 17.4, eval: 'เร็วมาก (Fast DB)', class: 'text-slate-600' }
+                    { step: '💾 4. SQL Server Audit Logging', ms: 0.1, eval: 'เร็วมาก (Fast DB)', class: 'text-slate-600' }
                 ]
             },
             '200kb_5u': {
@@ -802,7 +816,7 @@
                     { step: '🔐 1. USB Token Hardware RSA Signing', ms: 2878.7, eval: 'Hardware Bottleneck (คิวยาว)', class: 'text-rose-600 font-semibold' },
                     { step: '🌐 2. GlobalSign TSA & LTV (RFC 3161)', ms: 650.1, eval: 'External Network', class: 'text-amber-600' },
                     { step: '📄 3. iText PDF/A-3B & XML Attachment', ms: 5.5, eval: 'ปกติ (CPU Bound)', class: 'text-slate-600' },
-                    { step: '💾 4. SQL Server Audit Logging', ms: 3.6, eval: 'เร็วมาก (Fast DB)', class: 'text-slate-600' }
+                    { step: '💾 4. SQL Server Audit Logging', ms: 0.0, eval: 'เร็วมาก (Fast DB)', class: 'text-slate-600' }
                 ]
             },
             '3mb_1u': {
@@ -812,7 +826,7 @@
                     { step: '🔐 1. USB Token Hardware RSA Signing', ms: 741.2, eval: 'Hardware Bottleneck', class: 'text-rose-600 font-semibold' },
                     { step: '🌐 2. GlobalSign TSA & LTV (RFC 3161)', ms: 625.7, eval: 'External Network', class: 'text-amber-600' },
                     { step: '📄 3. iText PDF/A-3B & XML Attachment', ms: 6.0, eval: 'ปกติ (CPU Bound)', class: 'text-slate-600' },
-                    { step: '💾 4. SQL Server Audit Logging', ms: 3.9, eval: 'เร็วมาก (Fast DB)', class: 'text-slate-600' }
+                    { step: '💾 4. SQL Server Audit Logging', ms: 0.0, eval: 'เร็วมาก (Fast DB)', class: 'text-slate-600' }
                 ]
             },
             '3mb_5u': {
@@ -822,7 +836,7 @@
                     { step: '🔐 1. USB Token Hardware RSA Signing', ms: 2598.5, eval: 'Hardware Bottleneck (คิวยาว)', class: 'text-rose-600 font-semibold' },
                     { step: '🌐 2. GlobalSign TSA & LTV (RFC 3161)', ms: 652.1, eval: 'External Network', class: 'text-amber-600' },
                     { step: '📄 3. iText PDF/A-3B & XML Attachment', ms: 11.6, eval: 'ปกติ (CPU Bound)', class: 'text-slate-600' },
-                    { step: '💾 4. SQL Server Audit Logging', ms: 3.0, eval: 'เร็วมาก (Fast DB)', class: 'text-slate-600' }
+                    { step: '💾 4. SQL Server Audit Logging', ms: 0.1, eval: 'เร็วมาก (Fast DB)', class: 'text-slate-600' }
                 ]
             }
         };
@@ -904,7 +918,7 @@
                 renderBreakingPointChart();
             } else if (tabId === 'calculator') {
                 calculateQueueTime();
-            }
+            } 
         }
 
         // BASELINE VIEW UPDATER
