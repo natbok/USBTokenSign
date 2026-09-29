@@ -108,7 +108,7 @@ curl -X POST "{{baseUrl}}/api/Sign" \
 ## 5. Endpoints ตรวจสอบสถานะคิว (Queue Monitoring)
 
 - **ดูสถานะคิวทั้งหมด:** `GET {{baseUrl}}/api/Sign/queue/status`
-- **ดูเฉพาะคิวด่วน:** `GET {{baseUrl}}/api/Sign/queue/info-urgent`
+- **ดูเฉพาะคิวด่วน:** `GET {{baseUrl}}/api/Sign/queue/info-urgent` เพื่อดูว่า isUrgentAvailable เป็น true หรือไม่ 
 
 *(อ่านรายละเอียดระบบคิวและ SLA ฉบับสมบูรณ์ได้ที่: [PriorityQueueArchitecture.md](../API/PriorityQueueArchitecture.md))*
 
